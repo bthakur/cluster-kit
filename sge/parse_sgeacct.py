@@ -4,6 +4,9 @@ import os, sys
 import re
 import getopt
 import gzip, bz2
+import pprint as pp
+import mmap
+import subprocess
 
 helptext="""
 +-------+
@@ -65,11 +68,12 @@ def check_sge():
 
 def check_opts():
 #-# Globals at the top
-    global f_fopt;global f_aopt
+    #global f_fopt;global f_aopt, 
+    global dic_arg
     f_sge=False; f_fopt=False; f_aopt=False;
     #print default_acct;
 #-# Options we can parse
-    opts='-f:-a:-h'
+    opts='-f:-a:-h-Q'
     if  sys.argv:
         args=sys.argv[1:]
         optlist,arglist=getopt.getopt(args,opts)
@@ -77,18 +81,23 @@ def check_opts():
         print "| Options Supplied|"
         print "+-----------------+"
         print " %s" %optlist
-        opts_dic={}
+        dic_arg={}
+        #sys.exit()
         for o,a in optlist:
-            if o=='-f':
-                f_fopt=True
-                f_args=a
-            elif o=='-a':
-                f_aopt=True
-                #print a
-            elif o=='-h':
-                help()
-                sys.exit()
-
+            dic_arg[o]=a
+            #if o=='-f':
+            #    print "Processing -f"
+            #    #f_fopt=True
+            #elif o=='-Q':
+            #    f_Qopt=True
+            #elif o=='-a':
+            #    f_aopt=True
+            #elif o=='-h':
+            if o=='-h':
+               help()
+               sys.exit()
+        print "dictionary",dic_arg
+        #sys.exit()
 #-# Read accounting files(default and passed with -f)
   #----------------------------
   # File Checks: Parse files
@@ -103,8 +112,8 @@ def check_opts():
        acct_file_list.append((default_acct,'def'))
        #print " Adding default accounting", (default_acct,'def')
 #----# Check if other files provided exist
-       if  f_fopt:
-           mf=f_args.split(',')
+       if  '-f' in dic_arg:
+           mf=dic_arg['-f'].split(',')
            #print 'f_sge',f_sge
 #--------# Check SGE default directories
            if  f_sge:
@@ -193,18 +202,50 @@ def check_opts():
              except Exception as err:
                  print err
                  #pass
+#-# Reduce list to remove duplicate job entries, needless?, worth it?
+    acct_jobs=list(set(acct_jobs))
+    pp.pprint(acct_jobs[1:10])
 
-#----------------------------
-# Parse option -Q: pass this assembled file/other options to qacct
-#----------------------------
+#-# Read accounting files(default and passed with -f)
+    #----------------------------
+    # Parse option -Q: pass this assembled file/other options to qacct
+    #----------------------------
+    if '-Q' in dic_arg:
+#----# Check if qacct is available
 
-    #print list_of_files
-    #a=[]
-    #if a:
+#---# Create memory map file
+    #----------------------------
+    # Pass file without wrapper options -Q, -a, -L
+    #----------------------------
+       mjobs=mmap.mmap(-1,13)
+       mjobs= acct_jobs
+       print "Mmap"
+       print "========="
+       print mjobs[10]
+       dic_qacct={}
+       print dic_arg
+       for k,v in dic_arg.items():
+         if k == '-Q':
+            print k,v
+            continue
+            #dic_qacct[k]=v
+         elif k == '-a':
+            continue
+         elif k == '-f':
+            dic_qacct[k]=mjobs
+         else:
+            dic_qacct[k]=v
+       print 'dic_qacct', dic_qacct.keys()
+
+#---# Subprocess to run qacct command
+    #----------------------------
+    # Check new options
+    #----------------------------
+ 
+
     #for f in g:
     #    with open(f,'read') as fi:
     #        a.extend(fi.readlines())
-    
     #print a[0]
     #print a[1]
     #print a[-1]
@@ -214,9 +255,9 @@ def check_opts():
 #----------------------------
 
 def main():
-    global f_sge, f_fopt, f_aopt, default_acct
+    global f_sge, default_acct
     check_sge()
-    check_opts() 
+    check_opts()
     #read_accounting()
     #print list_of_files
 
