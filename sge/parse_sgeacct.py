@@ -29,17 +29,18 @@ helptext="""
 def help():
     print helptext
 
-#----------------------------
-# SGE support:
-#----------------------------
 def check_sge():
+    print '''
+    #----------------------------
+    # SGE support:
+    #----------------------------    '''
     global default_acct, f_sge
     try:
         dir_sge_root=os.environ["SGE_ROOT"]
         dir_sge_cell=os.environ["SGE_CELL"]
         f_sge=True
     except KeyError:
-        print "SGE_ROOT/CELL undefined, Will try reading files locally"
+        print "SGE_ROOT/CELL not defined, Will try reading files locally"
         f_sge=False
 
     if  f_sge:				# With sge		
@@ -51,7 +52,9 @@ def check_sge():
         sge_rootcell=dir_sge_root+'/'+dir_sge_cell
         default_acct=sge_rootcell+'/'+dir_cur_acct+'/'+sge_cur_acct
         default_rept=sge_rootcell+'/'+dir_cur_acct+'/'+sge_cur_rept
-        #	
+        #
+        # sge version
+        # Find version info	
     else:				# Without sge
         dir_cur_acct=os.getcwd()          # Def. location is cwd
         dir_log_acct=os.getcwd()          # Def. location for cwd
@@ -60,13 +63,13 @@ def check_sge():
 
   #Change if your defaut is somewhere else
   #default_acct=?some_usr_global_copy
-    print default_acct
-
-#----------------------------
-# Parse Input:  getopt
-#----------------------------
+  #print default_acct
 
 def check_opts():
+    print '''
+    #------------------------
+    # Parse Input:  getopt
+    #------------------------     '''
 #-# Globals at the top
     #global f_fopt;global f_aopt, 
     global dic_arg
@@ -77,9 +80,6 @@ def check_opts():
     if  sys.argv:
         args=sys.argv[1:]
         optlist,arglist=getopt.getopt(args,opts)
-        print "+-----------------+"
-        print "| Options Supplied|"
-        print "+-----------------+"
         print " %s" %optlist
         dic_arg={}
         #sys.exit()
@@ -96,7 +96,7 @@ def check_opts():
             if o=='-h':
                help()
                sys.exit()
-        print "dictionary",dic_arg
+        #print "dictionary",dic_arg
         #sys.exit()
 #-# Read accounting files(default and passed with -f)
   #----------------------------
@@ -133,12 +133,13 @@ def check_opts():
 #-# Reduce list to remove duplicates
     g=list(set(g))
     #print "    Full list",g
+    #print "    Full list",acct_file_list
 #-# Check if the files need to be unzipped
     for f_i in g:
         #print "----+----------------+ "
         #print "    | Parsing file : %s " %f_i
         #print "    +----------------+ "
-        #print "    %s" %f_i
+        ##print "    %s" %f_i
         f=str(f_i)
         #continue
         if f.endswith('.tar.gz'):
@@ -190,21 +191,32 @@ def check_opts():
              break
         else:
              fname=f_i
-             acct_file_list.append((fname,'nozip'))
+             #print fname == default_acct
+             #if fname != default_acct:
+             #   acct_file_list.append((fname,'nozip'))
              #print "    No extension, will try reading as such", (fname,'nozip')
              try:
                  with open(f_i,'r') as fi:
                       lines=fi.readlines()
-                      acct_file_list.extend((fname,'nozip'))
+                      #acct_file_list.extend((fname,'nozip'))
                       acct_jobs.extend(lines)
-                      print "    (%s, %s)" %(fname,'nozip')
+                      #print "    (%s, %s)" %(fname,'nozip')
+                      if fname != default_acct:
+                         acct_file_list.append((fname,'nozip'))
                       #print acct_jobs[0]
              except Exception as err:
                  print err
                  #pass
 #-# Reduce list to remove duplicate job entries, needless?, worth it?
     acct_jobs=list(set(acct_jobs))
-    pp.pprint(acct_jobs[1:10])
+    #pp.pprint(acct_jobs[:])
+    print '''
+    #----------------------------
+    # Done reading accounting files
+    #----------------------------
+    '''
+    pp.pprint(acct_file_list)
+    #sys.exit()
 
 #-# Read accounting files(default and passed with -f)
     #----------------------------
@@ -221,7 +233,8 @@ def check_opts():
        mjobs= acct_jobs
        print "Mmap"
        print "========="
-       print mjobs[10]
+       #print mjobs[10]
+       print mjobs
        dic_qacct={}
        print dic_arg
        for k,v in dic_arg.items():
