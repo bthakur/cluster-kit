@@ -30,16 +30,55 @@ helptext="""
 def help():
     print helptext
 
+def check_opts():
+    print '''
+    #------------------------
+    # Parse Input:  getopt
+    #------------------------     '''
+#-# Globals at the top
+    #global f_fopt;global f_aopt, 
+    global dic_arg
+    f_sge=False; f_fopt=False; f_aopt=False;
+    #print default_acct;
+#-# Options we can parse
+    opts='-f:-a:-h-Q'
+    if  sys.argv:
+        args=sys.argv[1:]
+        optlist,arglist=getopt.getopt(args,opts)
+        print " %s" %optlist
+        dic_arg={}
+        for o,a in optlist:
+            dic_arg[o]=a
+            #if o=='-f':
+            #    print "Processing -f"
+            #    #f_fopt=True
+            #elif o=='-Q':
+            #    f_Qopt=True
+            #elif o=='-a':
+            #    f_aopt=True
+            #elif o=='-h':
+            
+            if o=='-h':
+               help()
+               sys.exit()
+        def_acct=check_sge()
+        read_accounting()
+        sys.exit()
+        #print "dictionary",dic_arg
+        #sys.exit()
+
+
 def check_sge():
     print '''
     #----------------------------
     # SGE support:
     #----------------------------    '''
-    global default_acct, f_sge
+    sge_obj={}
+    #global default_acct, f_sge
     try:
         dir_sge_root=os.environ["SGE_ROOT"]
         dir_sge_cell=os.environ["SGE_CELL"]
-        f_sge=True
+        sge_obj['sup']=True
     except KeyError:
         print "SGE_ROOT/CELL not defined, Will try reading files locally"
         f_sge=False
@@ -66,66 +105,34 @@ def check_sge():
   #default_acct=?some_usr_global_copy
   #print default_acct
 
-def check_opts():
-    print '''
-    #------------------------
-    # Parse Input:  getopt
-    #------------------------     '''
-#-# Globals at the top
-    #global f_fopt;global f_aopt, 
-    global dic_arg
-    f_sge=False; f_fopt=False; f_aopt=False;
-    #print default_acct;
-#-# Options we can parse
-    opts='-f:-a:-h-Q'
-    if  sys.argv:
-        args=sys.argv[1:]
-        optlist,arglist=getopt.getopt(args,opts)
-        print " %s" %optlist
-        dic_arg={}
-        #sys.exit()
-        for o,a in optlist:
-            dic_arg[o]=a
-            #if o=='-f':
-            #    print "Processing -f"
-            #    #f_fopt=True
-            #elif o=='-Q':
-            #    f_Qopt=True
-            #elif o=='-a':
-            #    f_aopt=True
-            #elif o=='-h':
-            if o=='-h':
-               help()
-               sys.exit()
-        #print "dictionary",dic_arg
-        #sys.exit()
+  #----------------------------
 #-# Read accounting files(default and passed with -f)
   #----------------------------
+def read_accounting(arg_file):
   # File Checks: Parse files
-  #----------------------------
     g=[]
     h=[]
     acct_jobs=[]
     acct_file_list=[]
     if os.path.isfile(default_acct):
-#----# Add default accounting
+#---# Add default accounting
        g+=[default_acct]
        acct_file_list.append((default_acct,'def'))
        #print " Adding default accounting", (default_acct,'def')
-#----# Check if other files provided exist
-       if  '-f' in dic_arg:
-           mf=dic_arg['-f'].split(',')
-           #print 'f_sge',f_sge
-#--------# Check SGE default directories
-           if  f_sge:
+#---# Check if other files provided exist
+       #if  '-f' in dic_arg:
+       #    mf=dic_arg['-f'].split(',')
+       #    #print 'f_sge',f_sge
+#---# Check SGE default directories
+       if  f_sge:
                for f in mf:
                  for fullf in  \
                      sge_rootcell+'/'+dir_cur_acct+'/',+f, \
                      sge_rootcell+'/'+dir_log_acct+'/'+f:
                      if os.path.isfile(fullf):
                         g.append(fullf)
-#--------# Check cwd(default) directory
-           else:
+#---# Check cwd(default) directory
+       else:
                for f in mf:
                  for fullf in [os.getcwd()+'/'+str(f)] :
                      #print fullf
@@ -210,7 +217,8 @@ def check_opts():
                  #pass
 #-# Reduce list to remove duplicate job entries, needless?, worth it?
     acct_jobs=list(set(acct_jobs))
-    #pp.pprint(acct_jobs[:])
+    return acct_jobs
+    pp.pprint(acct_jobs[:])
     print '''
     #----------------------------
     # Done reading accounting files
@@ -223,33 +231,34 @@ def check_opts():
     #----------------------------
     # Parse option -Q: pass this assembled file/other options to qacct
     #----------------------------
-    if '-Q' in dic_arg:
+    #if '-Q' in dic_arg:
 #----# Check if qacct is available
 
 #---# Create memory map file
+#def create_mmap(acct_jobs):
     #----------------------------
     # Pass file without wrapper options -Q, -a, -L
     #----------------------------
-       mjobs=mmap.mmap(-1,13)
-       mjobs= acct_jobs
-       print "Mmap"
-       print "========="
-       #print mjobs[10]
-       print mjobs
-       dic_qacct={}
-       print dic_arg
-       for k,v in dic_arg.items():
-         if k == '-Q':
-            print k,v
-            continue
-            #dic_qacct[k]=v
-         elif k == '-a':
-            continue
-         elif k == '-f':
-            dic_qacct[k]=mjobs
-         else:
-            dic_qacct[k]=v
-       print 'dic_qacct', dic_qacct.keys()
+    mjobs=mmap.mmap(-1,13)
+    mjobs= acct_jobs
+    print "Mmap"
+    print "========="
+    #print mjobs[10]
+    print mjobs
+    dic_qacct={}
+    print dic_arg
+    #for k,v in dic_arg.items():
+    #  if k == '-Q':
+    #     print k,v
+    #     continue
+    #     #dic_qacct[k]=v
+    #  elif k == '-a':
+    #     continue
+    #  elif k == '-f':
+    #     dic_qacct[k]=mjobs
+    #  else:
+    #     dic_qacct[k]=v
+    #print 'dic_qacct', dic_qacct.keys()
 
 #---# Subprocess to run qacct command
     #----------------------------
@@ -269,9 +278,10 @@ def check_opts():
 #----------------------------
 
 def main():
-    global f_sge, default_acct
-    check_sge()
+    #global f_sge, default_acct
     check_opts()
+    #check_sge()
+    #acct_jobs
     #read_accounting()
     #print list_of_files
 

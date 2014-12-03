@@ -141,6 +141,7 @@ for o,a in optlist:
     b=process_nodes(a)
     if o in opts_dic:
       opts_dic[o]+=b
+      #print b
     else:
       opts_dic[o]=b
     #print "Scanning Nodes \n %s " %(opts_dic[o])
@@ -180,6 +181,9 @@ elif '-j' in opts_dic:
 if scheduler == 'tm':
   comm=['pbsnodes','-x']
 elif scheduler == 'sge':
+  com=[qhost']
+  for k in opts_dic:
+    com=com.append
   comm=['qhost','-j','-q', '-xml']
 else:
   print "scheduler unknown"
