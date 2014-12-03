@@ -19,6 +19,7 @@ helptext="""
                     -L last job
                     -Q Pass known options to qacct
                     -a At_this_time(Begin and End date must lie within)
+                    -w Running in this window(Start is before, End if after)
                     -f accounting-20140405,accounting-20140505.gz 
                        # Use accounting files(comma separated, or zipped)
 ./parse_sgeacct.py  -h # Will print help message and exit
