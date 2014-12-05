@@ -22,6 +22,8 @@ def check_scheduler():
     for sch in schedulers:
       if sch in whi_qst_out:
         obj_sch['name']=sch
+        obj_sch['qstat']=qstat
+        obj_sch['qhost']=qstat
         obj_sch['env']={'PATH':whi_qst_out[:-len('/qstat')-1]}
       else:
         obj_sch['name']=None
@@ -29,14 +31,20 @@ def check_scheduler():
         if sch == 'uge':
           obj_sch['env']['SGE_ROOT']=''
           obj_sch['env']['SGE_CELL']=''
+          obj_sch['sch_stat']=qstat
+          obj_sch['sch_host']=qhost
           print "Supports %s" %sch
         elif sch == 'torque':
           obj_sch['env']['PBS_HOME']=''
           obj_sch['env']['PBS_SERVER']=''
+          obj_sch['sch_stat']=qstat
+          obj_sch['sch_host']=pbsnodes
           print "Supports %s" %sch
         elif sch == 'slurm':
           obj_sch['env']['SLURM_']=''
           obj_sch['env']['SLURM_']=''
+          obj_sch['sch_stat']=sinfo
+          obj_sch['sch_host']=sinfo
           print "Supports %s" %sch
         else:
           print "Found no supported scheduler...Exiting"
@@ -49,7 +57,17 @@ def check_scheduler():
     Return Error               %s
     Found support for          %s
     ''' %(schedulers, obj_sch['qstat'],obj_sch['err_code'],obj_sch['name'])
+    
     return obj_sch
+
+def run_command(com_inp):
+    com_out={}
+    p=subprocess.Popen(com_inp,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out,err=p.communicate()
+    print out
+    com_out['out']=out
+    return com_out
+
 #----------------------------
 # Main
 #----------------------------
@@ -57,11 +75,9 @@ def check_scheduler():
 def main():
   # Check Scheduler
     o_sch=check_scheduler()
-
-    #check_sge()
-    #acct_jobs
-    #read_accounting()
-    #print list_of_files
+    print o_sch['name']
+    o_qst=run_command(o_sch['qstat'])
+    print o_qst['out']
 
 if __name__ == "__main__":
     main()
