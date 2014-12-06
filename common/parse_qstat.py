@@ -1,7 +1,7 @@
 #!/usr/bin/env python27
 
 import os,sys
-import subprocess
+import subprocess as sp
 import re
 import pprint as pp
 
@@ -15,7 +15,7 @@ sched_stat={'uge':'qstat','torque':'qstat','slurm':'squeue'}
 def run_command(com_inp):
     com_out={}
     try:
-        p=subprocess.Popen(com_inp,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p=sp.Popen(com_inp,stdout=sp.PIPE, stderr=sp.PIPE)
     except:
         print "    %s did not return version" %com
     # some issues on carver python26 with p.wait
@@ -44,16 +44,15 @@ def check_scheduler():
       com_qst=['which',sched_stat[sch]]
       o_com=run_command(com_qst)
       if o_com['ret'] ==0:
-          out=str(o_com['out'])
-          obj_sch['env']={'PATH':out[:-len('/'+sched_stat[sch])-1]}
+          out=o_com['out'][0]
+          obj_sch['env']={'PATH':out[:-len(sched_stat[sch])-1]}
           if 'uge' in out:
             obj_sch['env']['SGE_ROOT']=os.environ['SGE_ROOT']
-            obj_sch['env']['SGE_CELL']=''
+            obj_sch['env']['SGE_CELL']=os.environ['SGE_CELL']
             obj_sch['sch_name']='uge'
             obj_sch['sch_stat']=['qstat','-u','*']
             obj_sch['sch_host']=['qhost','-j']
             obj_sch['sch_ver']=['-help']
-            obj_sch['env']={'PATH':out[:-len('/'+sched_stat[sch])-1]}
             #print "Supports %s" %sch
           elif 'torque' in out:
             obj_sch['env']['PBS_HOME']=''
@@ -62,17 +61,14 @@ def check_scheduler():
             obj_sch['sch_stat']=['qstat']
             obj_sch['sch_host']=['pbsnodes']
             obj_sch['sch_ver']=['--version']
-            obj_sch['env']={'PATH':out[:-len('/'+sched_stat[sch])-1]}
             #print "Supports %s" %sch
           elif 'slurm' in out:
             #obj_sch['env']['SLURM_ROOT']=os.environ['SLURM_ROOT']
-            #obj_sch['env']['SLURM_']=''
             obj_sch['sch_name']='slurm'
             obj_sch['sch_stat']=['squeue']
             obj_sch['sch_host']=['scontrol','show','node']
             obj_sch['sch_name']='slurm'
             obj_sch['sch_ver']=['--version']
-            obj_sch['env']={'PATH':out[:-len('/'+sched_stat[sch])-1]}
             #print "Supports %s" %sch
           else:
             print "Found no support for %s" %sch
