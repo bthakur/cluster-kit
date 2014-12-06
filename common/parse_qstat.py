@@ -4,27 +4,35 @@ import os,sys
 import subprocess
 import re
 
-# # Some global definitions
+# Some global definitions
 global schedulers
 schedulers=['uge', 'torque', 'slurm']
 
+# Get version by running command
 def get_version(com):
+    #print com
     try:
-        p=subprocess.Popen(com,stdout=subprocess.PIPE, \
-                          stderr=subprocess.PIPE)       
+        p=subprocess.Popen(com,stderr=subprocess.PIPE, \
+                          stdout=subprocess.PIPE,universal_newlines=True)   
     except:
         print "    %s did not return version" %com
-    out,err=p.communicate()
+    ret=p.wait()
+    err,out=p.communicate()
+    #print "Out",out
+    #print "Err",err
+    #print "Ret",ret
     m=re.search('[\d.]+',out)
+    #print m.group(0)
     ver=m.group(0)
     return ver
 
+# Check scheduler support
 def check_scheduler():
     obj_sch={}
     com_qst=['which','qstat']
     try:
-        p=subprocess.Popen(com_qst,stdout=subprocess.PIPE, \
-                          stderr=subprocess.PIPE)
+        p=subprocess.Popen(com_qst,stdout=subprocess.PIPE) #, \
+        #                  stderr=subprocess.PIPE)
     except:
         print "    %s command failed" %com_qst
     whi_qst_out,whi_qst_err=p.communicate() 
@@ -46,7 +54,7 @@ def check_scheduler():
           obj_sch['env']['PBS_SERVER']=''
           obj_sch['sch_stat']=['qstat']
           obj_sch['sch_host']=['pbsnodes']
-          obj_sch['get_ver']=['-v']
+          obj_sch['get_ver']=['--version']
           #print "Supports %s" %sch
         elif sch == 'slurm':
           obj_sch['env']['SLURM_ROOT']=os.environ['SLURM_ROOT']
@@ -79,7 +87,6 @@ def run_command(com_inp):
     print out[0]
     com_out['inp']=com_inp
     com_out['out']=out
-    #com_out['ver']=
     return com_out
 
 #----------------------------
