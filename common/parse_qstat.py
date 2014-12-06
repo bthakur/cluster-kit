@@ -10,7 +10,7 @@ schedulers=['uge', 'torque', 'slurm']
 
 # Get version by running command
 def get_version(com):
-    #print com
+    print com
     try:
         p=subprocess.Popen(com,stderr=subprocess.PIPE, \
                           stdout=subprocess.PIPE,universal_newlines=True)   
@@ -21,9 +21,11 @@ def get_version(com):
     #print "Out",out
     #print "Err",err
     #print "Ret",ret
-    m=re.search('[\d.]+',out)
-    #print m.group(0)
-    ver=m.group(0)
+    ver=None
+    if ret == 0:
+        m=re.search('[\d.]+',err+out)
+        print m.group(0)
+        ver=m.group(0)
     return ver
 
 # Check scheduler support
@@ -61,7 +63,7 @@ def check_scheduler():
           obj_sch['env']['SLURM_']=''
           obj_sch['sch_stat']=['sinfo']
           obj_sch['sch_host']=['scontrol','show','node']
-          obj_sch['get_ver']=['-v']
+          obj_sch['get_ver']=['--version']
           #print "Supports %s" %sch
         else:
           print "Found no supported scheduler...Exiting"
