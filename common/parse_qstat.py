@@ -16,7 +16,9 @@ def get_version(com):
     out,err=p.communicate()
     if err != '':
         ver=out[2]
-    
+    else:
+        ver=None
+    return ver   
 
 def check_scheduler():
     obj_sch={}
@@ -40,25 +42,16 @@ def check_scheduler():
         if sch == 'uge':
           obj_sch['env']['SGE_ROOT']=os.environ['SGE_ROOT']
           obj_sch['env']['SGE_CELL']=''
-<<<<<<< HEAD
-          obj_sch['qstat']=['qstat', '-u', '*']
-          obj_sch['qhost']=['qhost', '-j']
-=======
           obj_sch['sch_stat']=['qstat','-u','*']
           obj_sch['sch_host']=['qhost','-j']
           obj_sch['get_ver']=['-help']
->>>>>>> 2f73d0f3902d5a75570e9bff9ec4aca25e357fea
           print "Supports %s" %sch
         elif sch == 'torque':
           obj_sch['env']['PBS_HOME']=''
           obj_sch['env']['PBS_SERVER']=''
           obj_sch['sch_stat']=['qstat']
-<<<<<<< HEAD
-          obj_sch['sch_host']=pbsnodes
-=======
           obj_sch['sch_host']=['pbsnodes']
           obj_sch['get_ver']=['-v']
->>>>>>> 2f73d0f3902d5a75570e9bff9ec4aca25e357fea
           print "Supports %s" %sch
         elif sch == 'slurm':
           obj_sch['env']['SLURM_ROOT']=os.environ['SLURM_ROOT']
@@ -88,12 +81,8 @@ def run_command(com_inp):
     com_out={}
     p=subprocess.Popen(com_inp,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out,err=p.communicate()
-<<<<<<< HEAD
     print out[0]
-=======
-    print out
     com_out['inp']=com_inp
->>>>>>> 2f73d0f3902d5a75570e9bff9ec4aca25e357fea
     com_out['out']=out
     com_out['ver']=
     return com_out
