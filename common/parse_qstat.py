@@ -31,8 +31,8 @@ def check_scheduler():
         if sch == 'uge':
           obj_sch['env']['SGE_ROOT']=''
           obj_sch['env']['SGE_CELL']=''
-          obj_sch['sch_stat']=qstat
-          obj_sch['sch_host']=qhost
+          obj_sch['sch_stat']=['qstat','-u','*','-v']
+          obj_sch['sch_host']=['qhost']
           print "Supports %s" %sch
         elif sch == 'torque':
           obj_sch['env']['PBS_HOME']=''
@@ -43,8 +43,8 @@ def check_scheduler():
         elif sch == 'slurm':
           obj_sch['env']['SLURM_']=''
           obj_sch['env']['SLURM_']=''
-          obj_sch['sch_stat']=sinfo
-          obj_sch['sch_host']=sinfo
+          obj_sch['sch_stat']=['sinfo']
+          obj_sch['sch_host']=['scontrol','show','node']
           print "Supports %s" %sch
         else:
           print "Found no supported scheduler...Exiting"
@@ -65,7 +65,9 @@ def run_command(com_inp):
     p=subprocess.Popen(com_inp,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out,err=p.communicate()
     print out
+    com_out['inp']=com_inp
     com_out['out']=out
+    com_out['ver']=
     return com_out
 
 #----------------------------
@@ -81,3 +83,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
