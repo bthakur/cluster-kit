@@ -10,7 +10,7 @@ schedulers=['uge', 'torque', 'slurm']
 def check_scheduler():
     obj_sch={}
     com_qst=['which','qstat']
-    obj_sch['qstat']=com_qst
+    #obj_sch['qstat']=com_qst
     try:
         p=subprocess.Popen(com_qst,stdout=subprocess.PIPE, \
                           stderr=subprocess.PIPE)
@@ -22,26 +22,24 @@ def check_scheduler():
     for sch in schedulers:
       if sch in whi_qst_out:
         obj_sch['name']=sch
-        obj_sch['qstat']=qstat
-        obj_sch['qhost']=qstat
         obj_sch['env']={'PATH':whi_qst_out[:-len('/qstat')-1]}
       else:
         obj_sch['name']=None
       if 'env' in whi_qst_out:
         if sch == 'uge':
-          obj_sch['env']['SGE_ROOT']=''
+          obj_sch['env']['SGE_ROOT']=os.environ['SGE_ROOT']
           obj_sch['env']['SGE_CELL']=''
-          obj_sch['sch_stat']=qstat
-          obj_sch['sch_host']=qhost
+          obj_sch['qstat']=['qstat', '-u', '*']
+          obj_sch['qhost']=['qhost', '-j']
           print "Supports %s" %sch
         elif sch == 'torque':
           obj_sch['env']['PBS_HOME']=''
           obj_sch['env']['PBS_SERVER']=''
-          obj_sch['sch_stat']=qstat
+          obj_sch['sch_stat']=['qstat']
           obj_sch['sch_host']=pbsnodes
           print "Supports %s" %sch
         elif sch == 'slurm':
-          obj_sch['env']['SLURM_']=''
+          obj_sch['env']['SLURM_ROOT']=os.environ['SLURM_ROOT']
           obj_sch['env']['SLURM_']=''
           obj_sch['sch_stat']=sinfo
           obj_sch['sch_host']=sinfo
@@ -64,7 +62,7 @@ def run_command(com_inp):
     com_out={}
     p=subprocess.Popen(com_inp,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out,err=p.communicate()
-    print out
+    print out[0]
     com_out['out']=out
     return com_out
 
@@ -77,7 +75,7 @@ def main():
     o_sch=check_scheduler()
     print o_sch['name']
     o_qst=run_command(o_sch['qstat'])
-    print o_qst['out']
+    #print o_qst['out'][0]
 
 if __name__ == "__main__":
     main()
