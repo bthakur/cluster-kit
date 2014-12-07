@@ -6,9 +6,18 @@ import re
 import pprint as pp
 
 # Some global definitions
-global schedulers,sched_stat
-schedulers=['uge', 'torque', 'slurm']
-sched_stat={'uge':'qstat','torque':'qstat','slurm':'squeue'}
+global schedulers,sched_stat, re_srch
+schedulers=['sge','uge', 'torque', 'slurm']
+sched_stat={'sge':'qstat','uge':'qstat','torque':'qstat','slurm':'squeue'}
+#sched_sche={'sge':'qstat','uge':'.xsd','torque':'','slurm':''}
+
+# Useful re-search compilation
+re_srch={ 
+'jid':'job(.*?)id',
+'sta':' s ',
+'que':'queue',
+'usr':'user'
+}
 
 # Get version by running command
 
@@ -54,6 +63,13 @@ def check_scheduler():
             obj_sch['sch_host']=['qhost','-j']
             obj_sch['sch_ver']=['-help']
             #print "Supports %s" %sch
+          elif 'sge' in out:
+            obj_sch['env']['SGE_ROOT']=os.environ['SGE_ROOT']
+            obj_sch['env']['SGE_CELL']=os.environ['SGE_CELL']
+            obj_sch['sch_name']='sge'
+            obj_sch['sch_stat']=['qstat','-u','*']
+            obj_sch['sch_host']=['qhost','-j']
+            obj_sch['sch_ver']=['-help']
           elif 'torque' in out:
             obj_sch['env']['PBS_HOME']=''
             obj_sch['env']['PBS_SERVER']=''
@@ -83,6 +99,23 @@ def check_scheduler():
     ''' %(schedulers, obj_sch['sch_stat'],obj_sch['sch_name'],obj_sch['sch_ver'])
     return obj_sch
 
+def get_elements_byschema(xml_doc, xml_sche, xml_typ):
+    print 'testing'
+    nam_spc = xml_doc.xpath("//xsd:element[@type = $n]/@name",
+                            namespaces={"xsd": 
+                                        "http://www.w3.org/2001/XMLSchema"},
+                            n=xml_typ)
+
+def get_header(hd):
+    print hd
+    print re_srch
+    for k,v in re_srch.items():
+        m=re.search(v,hd,re.IGNORECASE)
+        if m:
+          print k,v,m.group()
+          #return m.group()
+    return None
+
 #----------------------------
 # Main
 #----------------------------
@@ -93,6 +126,8 @@ def main():
     print o_sch['sch_name']
     o_qst=run_command(o_sch['sch_stat'])
     pp.pprint( o_qst['out'][0:9])
+  # Parse qstat header or xml schema
+    o_hea=get_header(o_qst['out'][0].lower())
 
 if __name__ == "__main__":
     main()
