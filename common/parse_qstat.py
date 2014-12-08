@@ -89,14 +89,18 @@ def check_scheduler():
           else:
             print "Found no support for %s" %sch
             #sys.exit()
-    com_ver=[obj_sch['sch_stat'][0]]+obj_sch['sch_ver']
-    obj_sch['sch_ver']=get_version(com_ver)
+          com_ver=[obj_sch['sch_stat'][0]]+obj_sch['sch_ver']
+          obj_sch['sch_ver']=get_version(com_ver)
+      else:
+        print "Did not find", sch
+        #sys.exit()
     pp.pprint(obj_sch)
-    print '''
-    Checking scheduler support %s
-    Command tried              %s
-    Found support for          (%s, %s)
-    ''' %(schedulers, obj_sch['sch_stat'],obj_sch['sch_name'],obj_sch['sch_ver'])
+    if 'sch_stat' in obj_sch:
+        print '''
+        Checking scheduler support %s
+        Command tried              %s
+        Found support for          (%s, %s)
+        ''' %(schedulers, obj_sch['sch_stat'],obj_sch['sch_name'],obj_sch['sch_ver'])
     return obj_sch
 
 def get_elements_byschema(xml_doc, xml_sche, xml_typ):
