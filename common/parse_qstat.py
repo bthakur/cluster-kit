@@ -107,14 +107,15 @@ def get_elements_byschema(xml_doc, xml_sche, xml_typ):
                             n=xml_typ)
 
 def get_header(hd):
+    head={}
     print hd
     print re_srch
     for k,v in re_srch.items():
         m=re.search(v,hd,re.IGNORECASE)
         if m:
           print k,v,m.group()
-          #return m.group()
-    return None
+          head[k]=m.group()
+    return head
 
 #----------------------------
 # Main
@@ -128,6 +129,10 @@ def main():
     pp.pprint( o_qst['out'][0:9])
   # Parse qstat header or xml schema
     o_hea=get_header(o_qst['out'][0].lower())
+    print o_hea
+  # Print simple summary
+    #running=filter(lambda f: o_hea[''] in f, o_qst['out'])
+    # print status> user> queue> jobid
 
 if __name__ == "__main__":
     main()
