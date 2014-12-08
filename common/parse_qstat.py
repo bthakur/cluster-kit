@@ -106,7 +106,11 @@ def get_elements_byschema(xml_doc, xml_sche, xml_typ):
                                         "http://www.w3.org/2001/XMLSchema"},
                             n=xml_typ)
 
+def get_avail_schema(sch,ver):
+    ava_scm={'uge-8.1.7':''}
+
 def get_header(hd):
+    
     head={}
     print hd
     print re_srch
@@ -114,7 +118,7 @@ def get_header(hd):
         m=re.search(v,hd,re.IGNORECASE)
         if m:
           print k,v,m.group()
-          head[k]=m.group()
+          head[k]=(m.group())
     return head
 
 #----------------------------
@@ -125,14 +129,23 @@ def main():
   # Check Scheduler
     o_sch=check_scheduler()
     print o_sch['sch_name']
+  # Check if Schema or header is available for version
+    o_scm=check_schema(o_sch['sch_name'], o_sch['sch_ver'])
+
     o_qst=run_command(o_sch['sch_stat'])
-    pp.pprint( o_qst['out'][0:9])
+    if o_qst['ret'] !=0:
+        print "  Error running %s" %o_sch['sch_stat']
+        print "  Error         %s" %o_qst['err']
+        sys.exit()
+    else:
+        pp.pprint( o_qst['out'][0:9])
   # Parse qstat header or xml schema
     o_hea=get_header(o_qst['out'][0].lower())
     print o_hea
   # Print simple summary
     #running=filter(lambda f: o_hea[''] in f, o_qst['out'])
     # print status> user> queue> jobid
+    
 
 if __name__ == "__main__":
     main()
