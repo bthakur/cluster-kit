@@ -7,13 +7,18 @@ import pprint as pp
 import copy as cp
 
 # Some global definitions
-global schedulers,sched_stat, re_srch
+global schedulers,sched_stat
+global re_srch, re_uge_stat, re_slurm_stat, re_torque_stat
 schedulers=['sge','uge', 'torque', 'slurm']
 sched_stat={'sge':'qstat','uge':'qstat','torque':'qstat','slurm':'squeue'}
 #sched_sche={'sge':'qstat','uge':'.xsd','torque':'','slurm':''}
 
 # Useful re-search compilation
-re_srch={ 'jid':'job.*?id','sta':' s|state ','que':'queue','usr':'user','slt':'slots'}
+#re_srch={ 'jid':'job.*?id','sta':' s|state ','que':'queue','usr':'user','slt':'slots'}
+re_srch={}
+re_uge_stat={ 'hd':'0','jid':'job.*?id','sta':' s|state ','que':'queue','usr':'user','slt':'slots'}
+re_slurm_stat={ 'hd':'0','jid':'job.*?id','sta':' s|state ','que':'queue','usr':'user','slt':'slots'}
+re_torque_stat={ 'hd':'2','jid':'job.*?id','sta':' s ','que':'queue','usr':'user[a-z]+','slt':'tsk'}
 
 scm_sta=['sta','usr','jid','que','slt' ]
 #scm_usr=['']
@@ -48,6 +53,7 @@ def get_version(com):
 # Check scheduler support
 def check_scheduler():
     obj_sch={}
+    global re_srch
     #
     for sch in schedulers:
       com_qst=['which',sched_stat[sch]]
@@ -62,6 +68,7 @@ def check_scheduler():
             obj_sch['sch_stat']=['qstat','-u','*']
             obj_sch['sch_host']=['qhost','-j']
             obj_sch['sch_ver']=['-help']
+            re_srch=cp.deepcopy(re_uge_stat)
             #print "Supports %s" %sch
           elif 'sge' in out:
             obj_sch['env']['SGE_ROOT']=os.environ['SGE_ROOT']
@@ -70,13 +77,15 @@ def check_scheduler():
             obj_sch['sch_stat']=['qstat','-u','*']
             obj_sch['sch_host']=['qhost','-j']
             obj_sch['sch_ver']=['-help']
+            re_srch=cp.deepcopy(re_uge_stat)
           elif 'torque' in out:
             obj_sch['env']['PBS_HOME']=''
             obj_sch['env']['PBS_SERVER']=''
             obj_sch['sch_name']='torque'
-            obj_sch['sch_stat']=['qstat']
+            obj_sch['sch_stat']=['qstat','-a']
             obj_sch['sch_host']=['pbsnodes']
             obj_sch['sch_ver']=['--version']
+            re_srch=cp.deepcopy(re_torque_stat)
             #print "Supports %s" %sch
           elif 'slurm' in out:
             #obj_sch['env']['SLURM_ROOT']=os.environ['SLURM_ROOT']
@@ -85,6 +94,7 @@ def check_scheduler():
             obj_sch['sch_host']=['scontrol','show','node']
             obj_sch['sch_name']='slurm'
             obj_sch['sch_ver']=['--version']
+            re_srch=cp.deepcopy(re_slurm_stat)
             #print "Supports %s" %sch
           else:
             print "Found no support for %s" %sch
@@ -101,6 +111,7 @@ def check_scheduler():
         Command tried              %s
         Found support for          (%s, %s)
         ''' %(schedulers, obj_sch['sch_stat'],obj_sch['sch_name'],obj_sch['sch_ver'])
+    print re_srch
     return obj_sch
 
 def get_elements_byschema(xml_doc, xml_sche, xml_typ):
@@ -118,13 +129,14 @@ def get_simple_summary(hd,bd):
     print bd[0:9]
 
 def get_header(hd):
+    #global re_srch
     head={}
     for i in range(len(scm_sta)):
         #head.append(None)
-        #print 'Searching',i, scm_sta[i], re_srch[scm_sta[i]]
+        print 'Searching',i, scm_sta[i], re_srch[scm_sta[i]]
         m=re.search(re_srch[scm_sta[i]] ,hd,re.IGNORECASE)      
         if m:
-            #print 'Found ',i, scm_sta[i], re_srch[scm_sta[i]], hd[m.span()[0]:m.span()[1]]
+            print 'Found ',i, scm_sta[i], re_srch[scm_sta[i]], hd[m.span()[0]:m.span()[1]]
             head[scm_sta[i]]=m.span()
     return head
 
@@ -140,24 +152,26 @@ def main():
     #o_scm=check_schema(o_sch['sch_name'], o_sch['sch_ver'])
 
     o_qst=run_command(o_sch['sch_stat'])
+    o_qst['out']=filter(lambda x: not re.match(r'^\s*$', x), o_qst['out'])
+    pp.pprint(o_qst['out'][2])
     if o_qst['ret'] !=0:
         print "  Error running %s" %o_sch['sch_stat']
         print "  Error         %s" %o_qst['err']
-        sys.exit()
     else:
         pp.pprint( o_qst['out'][0:9])
   # Parse qstat header or xml schema
-    o_hea=get_header(o_qst['out'][0].lower())
-    #print o_hea
-
+    hd=int(re_srch['hd'])
+    o_hea=get_header(o_qst['out'][hd].lower())
+    print 'Head',o_qst['out'][hd]
+    print 'Head',o_hea
   # Print simple summary
     usr_jbs={}
-    for line in o_qst['out'][1:-2]:
-        #print line
+    for line in o_qst['out'][hd:-2]:
         u=line[o_hea['usr'][0]:].split()[0];
         j=line[o_hea['jid'][0]:].split()[0];
         q=line[o_hea['que'][0]:].split()[0];
         l=line[o_hea['slt'][0]:].split()[0];
+        print u
         if u in usr_jbs:
             usr_jbs[u]+=cp.deepcopy([(j,l)])
         elif u not in usr_jbs and '----' not in u:
@@ -174,10 +188,6 @@ def main():
             print " %10s %10s %10s %s..."  %(u,TSlts, lset, uset[0:min(prn_len,lset)] )
         else:
             print " %10s %10s %10s %s"      %(u,TSlts, lset, uset[0:lset])
-    
-
-    #jobs=filter(lambda f: o_hea[''] in f, o_qst['out'][1:])
-    # print status> user> queue> jobid
     
 
 if __name__ == "__main__":
