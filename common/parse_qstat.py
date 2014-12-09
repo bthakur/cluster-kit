@@ -13,6 +13,32 @@ schedulers=['sge','uge', 'torque', 'slurm']
 sched_stat={'sge':'qstat','uge':'qstat','torque':'qstat','slurm':'squeue'}
 #sched_sche={'sge':'qstat','uge':'.xsd','torque':'','slurm':''}
 
+sched_supp={
+'uge':
+{     'sch_name':'uge',
+      'sch_stat':['qstat','-u','*'],
+      'sch_host':['qhost','-j'],
+      'sch_ver':['-help']
+},
+'sge':
+{     'sch_name':'sge',
+      'sch_stat':['qstat','-u','*'],
+      'sch_host':['qhost','-j'],
+      'sch_ver':['-help']
+},
+'slurm':
+{      'sch_name':'slurm',
+       'sch_stat':['squeue'],
+       'sch_host':['scontrol','show','node'],
+       'sch_ver':['--version']
+},
+'torque':
+{      'sch_name':'torque',
+       'sch_stat':['qstat','-a'],
+       'sch_host':['pbsnodes'],
+       'sch_ver':['--version']
+}}
+
 # Useful re-search compilation
 #re_srch={ 'jid':'job.*?id','sta':' s|state ','que':'queue','usr':'user','slt':'slots'}
 re_srch={}
@@ -60,40 +86,41 @@ def check_scheduler():
       o_com=run_command(com_qst)
       if o_com['ret'] ==0:
           out=o_com['out'][0]
+          obj_sch=cp.deepcopy(sched_supp[sch])
           obj_sch['env']={'PATH':out[:-len(sched_stat[sch])-1]}
           if 'uge' in out:
             obj_sch['env']['SGE_ROOT']=os.environ['SGE_ROOT']
             obj_sch['env']['SGE_CELL']=os.environ['SGE_CELL']
-            obj_sch['sch_name']='uge'
-            obj_sch['sch_stat']=['qstat','-u','*']
-            obj_sch['sch_host']=['qhost','-j']
-            obj_sch['sch_ver']=['-help']
+            #obj_sch['sch_name']='uge'
+            #obj_sch['sch_stat']=['qstat','-u','*']
+            #obj_sch['sch_host']=['qhost','-j']
+            #obj_sch['sch_ver']=['-help']
             re_srch=cp.deepcopy(re_uge_stat)
             #print "Supports %s" %sch
           elif 'sge' in out:
             obj_sch['env']['SGE_ROOT']=os.environ['SGE_ROOT']
             obj_sch['env']['SGE_CELL']=os.environ['SGE_CELL']
-            obj_sch['sch_name']='sge'
-            obj_sch['sch_stat']=['qstat','-u','*']
-            obj_sch['sch_host']=['qhost','-j']
-            obj_sch['sch_ver']=['-help']
+            #obj_sch['sch_name']='sge'
+            #obj_sch['sch_stat']=['qstat','-u','*']
+            #obj_sch['sch_host']=['qhost','-j']
+            #obj_sch['sch_ver']=['-help']
             re_srch=cp.deepcopy(re_uge_stat)
           elif 'torque' in out:
             obj_sch['env']['PBS_HOME']=''
             obj_sch['env']['PBS_SERVER']=''
-            obj_sch['sch_name']='torque'
-            obj_sch['sch_stat']=['qstat','-a']
-            obj_sch['sch_host']=['pbsnodes']
-            obj_sch['sch_ver']=['--version']
+            #obj_sch['sch_name']='torque'
+            #obj_sch['sch_stat']=['qstat','-a']
+            #obj_sch['sch_host']=['pbsnodes']
+            #obj_sch['sch_ver']=['--version']
             re_srch=cp.deepcopy(re_torque_stat)
             #print "Supports %s" %sch
           elif 'slurm' in out:
             #obj_sch['env']['SLURM_ROOT']=os.environ['SLURM_ROOT']
-            obj_sch['sch_name']='slurm'
-            obj_sch['sch_stat']=['squeue']
-            obj_sch['sch_host']=['scontrol','show','node']
-            obj_sch['sch_name']='slurm'
-            obj_sch['sch_ver']=['--version']
+            #obj_sch['sch_name']='slurm'
+            #obj_sch['sch_stat']=['squeue']
+            #obj_sch['sch_host']=['scontrol','show','node']
+            #obj_sch['sch_name']='slurm'
+            #obj_sch['sch_ver']=['--version']
             re_srch=cp.deepcopy(re_slurm_stat)
             #print "Supports %s" %sch
           else:
@@ -124,16 +151,13 @@ def get_elements_byschema(xml_doc, xml_sche, xml_typ):
 def check_schema(sch,ver):
     ava_scm={'uge-8.1.7':''}
 
-def get_simple_summary(hd,bd):
-    print hd
-    print bd[0:9]
 
 def get_header(hd):
     #global re_srch
     head={}
     for i in range(len(scm_sta)):
         #head.append(None)
-        print 'Searching',i, scm_sta[i], re_srch[scm_sta[i]]
+        #print 'Searching',i, scm_sta[i], re_srch[scm_sta[i]]
         m=re.search(re_srch[scm_sta[i]] ,hd,re.IGNORECASE)      
         if m:
             print 'Found ',i, scm_sta[i], re_srch[scm_sta[i]], hd[m.span()[0]:m.span()[1]]
@@ -162,28 +186,27 @@ def main():
   # Parse qstat header or xml schema
     hd=int(re_srch['hd'])
     o_hea=get_header(o_qst['out'][hd].lower())
-    print 'Head',o_qst['out'][hd]
-    print 'Head',o_hea
+    #print 'Head',o_qst['out'][hd]
+    #print 'Head',o_hea
   # Print simple summary
     usr_jbs={}
-    for line in o_qst['out'][hd:-2]:
+    for line in o_qst['out'][hd:]:
         u=line[o_hea['usr'][0]:].split()[0];
         j=line[o_hea['jid'][0]:].split()[0];
         q=line[o_hea['que'][0]:].split()[0];
         l=line[o_hea['slt'][0]:].split()[0];
-        print u
         if u in usr_jbs:
             usr_jbs[u]+=cp.deepcopy([(j,l)])
         elif u not in usr_jbs and '----' not in u:
             usr_jbs[u]=cp.deepcopy([(j,l)])
     #pp.pprint(usr_jbs)
-    prn_len=5
+    prn_len=3
     for u in usr_jbs:
         j=usr_jbs[u]
-        #l=usr_jbs[u][1]
         uset=list(set(j)); lset=len(j)
-        slots=[ int(x[1]) for x in j]
-        TSlts=sum(slots)
+        #
+        TSlts=sum([int(x[1]) for x in j if re.match(r'[0-9]+', x[1]) ] )
+        #
         if lset>prn_len:
             print " %10s %10s %10s %s..."  %(u,TSlts, lset, uset[0:min(prn_len,lset)] )
         else:
