@@ -43,7 +43,7 @@ sched_supp={
 #re_srch={ 'jid':'job.*?id','sta':' s|state ','que':'queue','usr':'user','slt':'slots'}
 re_srch={}
 re_uge_stat={ 'hd':'0','jid':'job.*?id','sta':' s|state ','que':'queue','usr':'user','slt':'slots'}
-re_slurm_stat={ 'hd':'0','jid':'job.*?id','sta':' s|state ','que':'queue','usr':'user','slt':'slots'}
+re_slurm_stat={ 'hd':'0','jid':'job.*?id','sta':' st ','que':'queue','usr':'user','slt':'nodes'}
 re_torque_stat={ 'hd':'2','jid':'job.*?id','sta':' s ','que':'queue','usr':'user[a-z]+','slt':'tsk'}
 
 scm_sta=['sta','usr','jid','que','slt' ]
@@ -93,36 +93,19 @@ def check_scheduler():
           if 'uge' in out:
             obj_sch['env']['SGE_ROOT']=os.environ['SGE_ROOT']
             obj_sch['env']['SGE_CELL']=os.environ['SGE_CELL']
-            #obj_sch['sch_name']='uge'
-            #obj_sch['sch_stat']=['qstat','-u','*']
-            #obj_sch['sch_host']=['qhost','-j']
-            #obj_sch['sch_ver']=['-help']
             re_srch=cp.deepcopy(re_uge_stat)
             #print "Supports %s" %sch
           elif 'sge' in out:
             obj_sch['env']['SGE_ROOT']=os.environ['SGE_ROOT']
             obj_sch['env']['SGE_CELL']=os.environ['SGE_CELL']
-            #obj_sch['sch_name']='sge'
-            #obj_sch['sch_stat']=['qstat','-u','*']
-            #obj_sch['sch_host']=['qhost','-j']
-            #obj_sch['sch_ver']=['-help']
             re_srch=cp.deepcopy(re_uge_stat)
           elif 'torque' in out:
             obj_sch['env']['PBS_HOME']=''
             obj_sch['env']['PBS_SERVER']=''
-            #obj_sch['sch_name']='torque'
-            #obj_sch['sch_stat']=['qstat','-a']
-            #obj_sch['sch_host']=['pbsnodes']
-            #obj_sch['sch_ver']=['--version']
             re_srch=cp.deepcopy(re_torque_stat)
             #print "Supports %s" %sch
           elif 'slurm' in out:
             #obj_sch['env']['SLURM_ROOT']=os.environ['SLURM_ROOT']
-            #obj_sch['sch_name']='slurm'
-            #obj_sch['sch_stat']=['squeue']
-            #obj_sch['sch_host']=['scontrol','show','node']
-            #obj_sch['sch_name']='slurm'
-            #obj_sch['sch_ver']=['--version']
             re_srch=cp.deepcopy(re_slurm_stat)
             #print "Supports %s" %sch
           else:
