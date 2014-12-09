@@ -12,12 +12,11 @@ sched_stat={'sge':'qstat','uge':'qstat','torque':'qstat','slurm':'squeue'}
 #sched_sche={'sge':'qstat','uge':'.xsd','torque':'','slurm':''}
 
 # Useful re-search compilation
-re_srch={ 
-'jid':'job(.*?)id',
-'sta':' s ',
-'que':'queue',
-'usr':'user'
-}
+re_srch={ 'jid':'job(.*?)id','sta':' s|state ','que':'queue','usr':'user'}
+
+scm_sta=['sta','usr','jid' ]
+#scm_usr=['']
+scm_que=['que','usr','jid']
 
 # Get version by running command
 
@@ -110,19 +109,22 @@ def get_elements_byschema(xml_doc, xml_sche, xml_typ):
                                         "http://www.w3.org/2001/XMLSchema"},
                             n=xml_typ)
 
-def get_avail_schema(sch,ver):
+def check_schema(sch,ver):
     ava_scm={'uge-8.1.7':''}
 
-def get_header(hd):
-    
-    head={}
+def get_simple_summary(hd,bd):
     print hd
-    print re_srch
-    for k,v in re_srch.items():
-        m=re.search(v,hd,re.IGNORECASE)
+    print bd[0:9]
+
+def get_header(hd):
+    head=[]
+    for i in range(len(scm_sta)):
+        print i, scm_sta[i], re_srch[scm_sta[i]]
+        m=re.search(re_srch[scm_sta[i]] ,hd)      
         if m:
-          print k,v,m.group()
-          head[k]=(m.group())
+            print i, scm_sta[i], re_srch[scm_sta[i]]
+            #print m.groups()
+    sys.exit()
     return head
 
 #----------------------------
@@ -134,7 +136,7 @@ def main():
     o_sch=check_scheduler()
     print o_sch['sch_name']
   # Check if Schema or header is available for version
-    o_scm=check_schema(o_sch['sch_name'], o_sch['sch_ver'])
+    #o_scm=check_schema(o_sch['sch_name'], o_sch['sch_ver'])
 
     o_qst=run_command(o_sch['sch_stat'])
     if o_qst['ret'] !=0:
@@ -146,7 +148,9 @@ def main():
   # Parse qstat header or xml schema
     o_hea=get_header(o_qst['out'][0].lower())
     print o_hea
+
   # Print simple summary
+    get_simple_summary(o_hea, o_sch[1:-1])
     #running=filter(lambda f: o_hea[''] in f, o_qst['out'])
     # print status> user> queue> jobid
     

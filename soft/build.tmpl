@@ -1,0 +1,89 @@
+#!/bin/bash
+
+export PKG_TOP="/opt"
+#export PKG_TOP="/usr/syscom/"
+
+# get os and version
+
+export PKG_SUB=
+
+# Pkg to be built
+  PREFIX="$PKG_TOP/packages/cfengine/3.6.1"
+
+  LOGS="$HOME/log/cfengine_logs"
+  PIDS="$HOME/log/cfengine_pids"
+  WORK="$HOME/log/cfengine_cache"
+  MASTER="$HOME/log/cfengine_master"
+  INPUT="$HOME/log/cfengine_input"
+  WITH="--enable-fhs --with-pthreads \
+      --with-pic --with-shell=bash \
+      --with-pam \
+      --with-logdir="$LOGS" \
+      --with-piddir="$PIDS" \
+      --with-workdir="$WORK" \
+      --with-masterdir="$MASTER" \
+      --with-inputdir="$INPUT" "
+
+# For now put build dependencies here
+  nPKG=2
+
+# dependency PKG1: LIGHTNINGMDB
+  PKG1="lmdb"
+  lmdb_TOP="/home/bthakur/src/lmdb/0.9.14"
+  lmdb_LDFLAGS="-L$lmdb_TOP/lib"
+  lmdb_LD_LIBRARY_PATH="$lmdb_TOP/lib"
+  lmdb_CPPFLAGS="-I$lmdb_TOP/include"
+  lmdb_LIBS="-llmdb"
+  lmdb_WITH="--with-lmdb=$lmdb_TOP"
+  #inherit top into a generic name PKG_TOP
+  #Top="${PKG1}_TOP";           PKG1_TOP=${!Top}
+
+# dependency PKG2: LIBXML2
+  PKG2="libxml2"
+  libxml2_TOP="/usr"
+  libxml2_LDFLAGS="-L$libxml2_TOP/lib64"
+  libxml2_LD_LIBRARY_PATH="$libxml2_TOP/lib64"
+  libxml2_CPPFLAGS="-I$libxml2_TOP/include"
+  libxml2_LIBS="-lxml2"
+  libxml2_WITH="--with-libxml2=$libxml2_TOP"
+
+# Putting it together+ Should not have to change from here on
+  for f in $(eval echo {1..$nPKG}); do
+    PKG=PKG$f
+    echo $f ${!PKG}
+    Top="${!PKG}_TOP"
+    With="${!PKG}_WITH";         WITH="$WITH ${!With}"
+    Libs="${!PKG}_LIBS";         LIBS="$LIBS ${!Libs}"
+    Ldflags="${!PKG}_LDFLAGS";   LDFLAGS="$LDFLAGS ${!Ldflags}"
+    Cppflags="${!PKG}_CPPFLAGS"; CPPFLAGS="$CPPFLAGS ${!Cppflags}"
+    Ldlibrarypath="${!PKG}_LD_LIBRARY_PATH"
+    LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${!Ldlibrarypath}"
+    #LIBS="$LIBS ${!Libs}"
+    #
+    echo -e "  $With \t ${!With}"
+    echo -e "  $Libs \t ${!Libs}" 
+    echo -e "  $Top  \t ${!Top}"
+    echo -e "  $Ldflags \t ${!Ldflags}"
+    echo -e "  $Cppflags \t ${!Cppflags}"
+    echo -e "  $Ldlibrarypath \t ${!Ldlibrarypath}"
+  done
+
+# Configure
+  echo "Configure with:"
+  #echo "$WITH"
+  echo "  $LIBS"
+  echo "  $LDFLAGS"
+  echo "  $CPPFLAGS"
+  #echo $LD_LIBRARY_PATH
+
+# For sanity 
+  #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PKG1_TOP/lib
+  #export LIBRARY_PATH=$LD_LIBRARY_PATH
+
+./configure --prefix="$PREFIX" $WITH \
+ CPPFLAGS="$CPPFLAGS" \
+ LDFLAGS="$LDFLAGS" \
+ LIBS="$LIBS"
+
+exit
+
