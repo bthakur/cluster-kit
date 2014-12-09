@@ -1,60 +1,54 @@
 #!/usr/bin/env python27
 
-import os,sys
-import subprocess as sp
-import re
-import pprint as pp
+import os,sys,re
 import copy as cp
+import pprint as pp
+import subprocess as sp
 
 # Some global definitions
-global schedulers,sched_stat
-global re_srch, re_uge_stat, re_slurm_stat, re_torque_stat
-schedulers=['sge','uge', 'torque', 'slurm']
-sched_stat={'sge':'qstat','uge':'qstat','torque':'qstat','slurm':'squeue'}
-#sched_sche={'sge':'qstat','uge':'.xsd','torque':'','slurm':''}
 
-sched_supp={
-'uge':
-{     'sch_name':'uge',
-      'sch_stat':['qstat','-u','*'],
-      'sch_host':['qhost','-j'],
-      'sch_ver':['-help']
-},
-'sge':
-{     'sch_name':'sge',
-      'sch_stat':['qstat','-u','*'],
-      'sch_host':['qhost','-j'],
-      'sch_ver':['-help']
-},
-'slurm':
-{      'sch_name':'slurm',
-       'sch_stat':['squeue'],
-       'sch_host':['scontrol','show','node'],
-       'sch_ver':['--version']
-},
-'torque':
-{      'sch_name':'torque',
-       'sch_stat':['qstat','-a'],
-       'sch_host':['pbsnodes'],
-       'sch_ver':['--version']
-}}
-
-# Useful re-search compilation
-#re_srch={ 'jid':'job.*?id','sta':' s|state ','que':'queue','usr':'user','slt':'slots'}
-re_srch={}
-re_uge_stat={ 'hd':'0','jid':'job.*?id','sta':' s|state ','que':'queue','usr':'user','slt':'slots'}
-re_slurm_stat={ 'hd':'0','jid':'job.*?id','sta':' st ','que':'queue','usr':'user','slt':'nodes'}
-re_torque_stat={ 'hd':'2','jid':'job.*?id','sta':' s ','que':'queue','usr':'user[a-z]+','slt':'tsk'}
-
-scm_sta=['sta','usr','jid','que','slt' ]
-#scm_usr=['']
-scm_que=['que','usr','jid']
-
-# Get version by running command
+def define_global():
+  # Global definitions
+    global sched_re, sched_supp, scm_sta
+  # Supported schedulers
+    sched_supp={
+    'uge':
+    {     'sch_name':'uge',
+          'sch_stat':['qstat','-u','*'],
+          'sch_host':['qhost','-j'],
+          'sch_ver':['-help']
+    },
+    'sge':
+    {     'sch_name':'sge',
+          'sch_stat':['qstat','-u','*'],
+          'sch_host':['qhost','-j'],
+          'sch_ver':['-help']
+    },
+    'slurm':
+    {      'sch_name':'slurm',
+           'sch_stat':['squeue'],
+           'sch_host':['scontrol','show','node'],
+           'sch_ver':['--version']
+    },
+    'torque':
+    {      'sch_name':'torque',
+           'sch_stat':['qstat','-a'],
+           'sch_host':['pbsnodes'],
+           'sch_ver':['--version']
+    }}
+  # Userful re searches
+    sched_re={
+    'uge':   {'hd':'0','jid':'job.*?id','sta':' s|state ','que':'queue',   'usr':'user','slt':'slots'},
+    'sge':   {'hd':'0','jid':'job.*?id','sta':' s|state ','que':'queue',   'usr':'user','slt':'slots'},
+    'slurm': {'hd':'0','jid':'job.*?id','sta':' st ',     'que':'partition','usr':'user','slt':'nodes'},
+    'torque':{'hd':'2','jid':'job.*?id','sta':' s ',      'que':'queue'    ,'usr':'user[a-z]+','slt':'tsk'},
+    }
+  # Schema/order for desired output status>user>jid
+    scm_sta=['sta','usr','jid','que','slt' ]
+    scm_que=['que','usr','jid']
 
 def run_command(com_inp):
     com_out={}
-    print "Trying command %s" %com_inp
     try:
         p=sp.Popen(com_inp,stdout=sp.PIPE, stderr=sp.PIPE)
     except:
@@ -83,38 +77,38 @@ def check_scheduler():
     obj_sch={}
     global re_srch
     #
-    for sch in schedulers:
+    for sch in sched_supp.keys():
       com_qst=['which',sched_supp[sch]['sch_host'][0]]
       o_com=run_command(com_qst)
       if o_com['ret'] ==0:
           out=o_com['out'][0]
           obj_sch=cp.deepcopy(sched_supp[sch])
-          obj_sch['env']={'PATH':out[:-len(sched_stat[sch])-1]}
+          rkey='re_'+sch+'_stat'
+          re_srch=cp.deepcopy(sched_re[sch])
+          obj_sch['env']={'PATH':out[:-len(sched_supp[sch]['sch_host'])-1]}
           if 'uge' in out:
             obj_sch['env']['SGE_ROOT']=os.environ['SGE_ROOT']
             obj_sch['env']['SGE_CELL']=os.environ['SGE_CELL']
-            re_srch=cp.deepcopy(re_uge_stat)
             #print "Supports %s" %sch
           elif 'sge' in out:
             obj_sch['env']['SGE_ROOT']=os.environ['SGE_ROOT']
             obj_sch['env']['SGE_CELL']=os.environ['SGE_CELL']
-            re_srch=cp.deepcopy(re_uge_stat)
+            #re_srch=cp.deepcopy(re_sge_stat)
           elif 'torque' in out:
             obj_sch['env']['PBS_HOME']=''
             obj_sch['env']['PBS_SERVER']=''
-            re_srch=cp.deepcopy(re_torque_stat)
             #print "Supports %s" %sch
           elif 'slurm' in out:
             #obj_sch['env']['SLURM_ROOT']=os.environ['SLURM_ROOT']
-            re_srch=cp.deepcopy(re_slurm_stat)
-            #print "Supports %s" %sch
+            #print re_slurm_stat
+            print "Supports %s" %sch
           else:
             print "Found no support for %s" %sch
             #sys.exit()
           com_ver=[obj_sch['sch_stat'][0]]+obj_sch['sch_ver']
           obj_sch['sch_ver']=get_version(com_ver)
       else:
-        print "Did not find", sch
+        print "Finding scheduler %s ... Failed" %sch
         #sys.exit()
     pp.pprint(obj_sch)
     if 'sch_stat' in obj_sch:
@@ -122,8 +116,9 @@ def check_scheduler():
         Checking scheduler support %s
         Command tried              %s
         Found support for          (%s, %s)
-        ''' %(schedulers, obj_sch['sch_stat'],obj_sch['sch_name'],obj_sch['sch_ver'])
+        ''' %(sched_supp.keys(), obj_sch['sch_stat'],obj_sch['sch_name'],obj_sch['sch_ver'])
     print re_srch
+    #sys.exit()
     return obj_sch
 
 def get_elements_byschema(xml_doc, xml_sche, xml_typ):
@@ -154,12 +149,13 @@ def get_header(hd):
 #----------------------------
 
 def main():
+  # Define global variabes
+    define_global()
   # Check Scheduler
     o_sch=check_scheduler()
-    print o_sch['sch_name']
   # Check if Schema or header is available for version
     #o_scm=check_schema(o_sch['sch_name'], o_sch['sch_ver'])
-
+  # Run qstat
     o_qst=run_command(o_sch['sch_stat'])
     o_qst['out']=filter(lambda x: not re.match(r'^\s*$', x), o_qst['out'])
     pp.pprint(o_qst['out'][2])
@@ -169,6 +165,8 @@ def main():
     else:
         pp.pprint( o_qst['out'][0:9])
   # Parse qstat header or xml schema
+    print re_srch['hd']
+    print 'Hd',re_srch['hd']
     hd=int(re_srch['hd'])
     o_hea=get_header(o_qst['out'][hd].lower())
     #print 'Head',o_qst['out'][hd]
