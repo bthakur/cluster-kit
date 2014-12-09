@@ -54,12 +54,14 @@ scm_que=['que','usr','jid']
 
 def run_command(com_inp):
     com_out={}
+    print "Trying command %s" %com_inp
     try:
         p=sp.Popen(com_inp,stdout=sp.PIPE, stderr=sp.PIPE)
     except:
-        print "    %s did not return version" %com
+        print "    %s Command failed" %com_inp
     # some issues on carver python26 with p.wait
     #ret=p.wait()
+    #if p:
     out,err=p.communicate()
     com_out['ret']=p.returncode
     com_out['inp']=com_inp
@@ -82,7 +84,7 @@ def check_scheduler():
     global re_srch
     #
     for sch in schedulers:
-      com_qst=['which',sched_stat[sch]]
+      com_qst=['which',sched_supp[sch]['sch_host'][0]]
       o_com=run_command(com_qst)
       if o_com['ret'] ==0:
           out=o_com['out'][0]
