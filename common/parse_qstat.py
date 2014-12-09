@@ -4,6 +4,7 @@ import os,sys
 import subprocess as sp
 import re
 import pprint as pp
+import copy as cp
 
 # Some global definitions
 global schedulers,sched_stat, re_srch
@@ -12,9 +13,9 @@ sched_stat={'sge':'qstat','uge':'qstat','torque':'qstat','slurm':'squeue'}
 #sched_sche={'sge':'qstat','uge':'.xsd','torque':'','slurm':''}
 
 # Useful re-search compilation
-re_srch={ 'jid':'job(.*?)id','sta':' s|state ','que':'queue','usr':'user'}
+re_srch={ 'jid':'job.*?id','sta':' s|state ','que':'queue','usr':'user','slt':'slots'}
 
-scm_sta=['sta','usr','jid' ]
+scm_sta=['sta','usr','jid','que','slt' ]
 #scm_usr=['']
 scm_que=['que','usr','jid']
 
@@ -117,14 +118,14 @@ def get_simple_summary(hd,bd):
     print bd[0:9]
 
 def get_header(hd):
-    head=[]
+    head={}
     for i in range(len(scm_sta)):
-        print i, scm_sta[i], re_srch[scm_sta[i]]
-        m=re.search(re_srch[scm_sta[i]] ,hd)      
+        #head.append(None)
+        #print 'Searching',i, scm_sta[i], re_srch[scm_sta[i]]
+        m=re.search(re_srch[scm_sta[i]] ,hd,re.IGNORECASE)      
         if m:
-            print i, scm_sta[i], re_srch[scm_sta[i]]
-            #print m.groups()
-    sys.exit()
+            #print 'Found ',i, scm_sta[i], re_srch[scm_sta[i]], hd[m.span()[0]:m.span()[1]]
+            head[scm_sta[i]]=m.span()
     return head
 
 #----------------------------
@@ -147,11 +148,35 @@ def main():
         pp.pprint( o_qst['out'][0:9])
   # Parse qstat header or xml schema
     o_hea=get_header(o_qst['out'][0].lower())
-    print o_hea
+    #print o_hea
 
   # Print simple summary
-    get_simple_summary(o_hea, o_sch[1:-1])
-    #running=filter(lambda f: o_hea[''] in f, o_qst['out'])
+    usr_jbs={}
+    for line in o_qst['out'][1:-2]:
+        #print line
+        u=line[o_hea['usr'][0]:].split()[0];
+        j=line[o_hea['jid'][0]:].split()[0];
+        q=line[o_hea['que'][0]:].split()[0];
+        l=line[o_hea['slt'][0]:].split()[0];
+        if u in usr_jbs:
+            usr_jbs[u]+=cp.deepcopy([(j,l)])
+        elif u not in usr_jbs and '----' not in u:
+            usr_jbs[u]=cp.deepcopy([(j,l)])
+    #pp.pprint(usr_jbs)
+    prn_len=5
+    for u in usr_jbs:
+        j=usr_jbs[u]
+        #l=usr_jbs[u][1]
+        uset=list(set(j)); lset=len(j)
+        slots=[ int(x[1]) for x in j]
+        TSlts=sum(slots)
+        if lset>prn_len:
+            print " %10s %10s %10s %s..."  %(u,TSlts, lset, uset[0:min(prn_len,lset)] )
+        else:
+            print " %10s %10s %10s %s"      %(u,TSlts, lset, uset[0:lset])
+    
+
+    #jobs=filter(lambda f: o_hea[''] in f, o_qst['out'][1:])
     # print status> user> queue> jobid
     
 
