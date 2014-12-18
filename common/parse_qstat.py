@@ -242,7 +242,7 @@ def main():
             #ni=q.group().split('@')[1].translate(None,digits)
         if qi in que_jbs:
             que_jbs[qi]+=cp.deepcopy([(j,l)])
-        elif qi not in que_jbs and '----' not in qi:
+        elif qi and qi not in que_jbs and '----' not in qi:
             que_jbs[qi]=cp.deepcopy([(j,l)])
         if ni in nod_jbs:
                 nod_jbs[ni]+=cp.deepcopy([(j,l)])
