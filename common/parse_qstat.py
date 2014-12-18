@@ -46,10 +46,10 @@ def define_global():
     }
 
     sched_stat_ou={
-    'uge': {'jid':'[0-9]+','sta':'r|qw','que':'([\S]+@[a-zA-Z0-9-]+)','usr':'[a-zA-Z0-9-]+','slt':'[0-9]+','sub':'([0-9//]+)\s([0-9:]+)'}, 
-    'sge': {'jid':'[0-9]+','sta':'r|qw','que':'([\S]+@[a-zA-Z0-9-]+)','usr':'[a-zA-Z0-9-]+','slt':'[0-9]+','sub':'([0-9//]+)\s([0-9:]+)'},
+    'uge': {'jid':'[0-9]+','sta':{'run':'r','wai':'qw'},'que':'([\S]+@[a-zA-Z0-9-]+)','usr':'[a-zA-Z0-9-]+','slt':'[0-9]+','sub':'([0-9//]+)\s([0-9:]+)'}, 
+    'sge': {'jid':'[0-9]+','sta':{'run':'r','wai':'qw'},'que':'([\S]+@[a-zA-Z0-9-]+)','usr':'[a-zA-Z0-9-]+','slt':'[0-9]+','sub':'([0-9//]+)\s([0-9:]+)'},
     'slurm':  [],
-    'torque':{'jid':'[0-9]+','sta':'r|q','que':'([a-zA-Z0-9-_.]+)','usr':'[a-zA-Z0-9-]+','slt':'[0-9]+','sub':'([0-9//]+)\s([0-9:]+)'}
+    'torque':{'jid':'[0-9]+','sta':{'run':'R','wai':'Q'},'que':'([a-zA-Z0-9-_.]+)','usr':'[a-zA-Z0-9-]+','slt':'[0-9]+','sub':'([0-9//]+)\s([0-9:]+)'}
     }
 
 
@@ -187,6 +187,7 @@ def main():
   # Remove empty lines and hyphen-only lines
     o_qst['out']=filter(lambda x: not re.match(r'^\s*$',  x), o_qst['out'])
     o_qst['out']=filter(lambda x: not re.match(r'[- ]+$', x), o_qst['out'])
+    
   # Print some
     prn_len=5
     pp.pprint( o_qst['out'][0: min(prn_len,len(o_qst['out']))] )
@@ -202,14 +203,14 @@ def main():
   # Get header variables
     #sys.exit()
     o_hea=get_header(o_qst['out'][hd].lower())
-    print o_hea
+    print hd,o_hea
     #sys.exit()
   # Create simple representation of user jobs with user keys
     usr_jbs={}
     sts_jbs={}
     que_jbs={}
     nod_jbs={}
-    for line in o_qst['out'][hd:]:
+    for line in o_qst['out'][hd+1:]:
         u=line[o_hea['usr'][0]:].split()[0];
         j=line[o_hea['jid'][0]:].split()[0];
         #q=line[o_hea['que'][0]:].split()[0];       
@@ -217,14 +218,28 @@ def main():
         s=line[o_hea['sta'][0]:].split()[0];
         l=line[o_hea['slt'][0]:].split()[0];
         q=line[o_hea['que'][0]:].split()[0];
+        
         if 'ge' in o_sch['sch_name']:
           q=re.search(sched_stat_ou[o_sch['sch_name']]['que'],line)
           if q:
             qi=q.group().split('@')[0]
             ni=q.group().split('@')[1].translate(None,digits)
-          else:
+            if qi in que_jbs:
+                que_jbs[qi]+=cp.deepcopy([(j,l)])
+            elif qi not in que_jbs and '----' not in qi:
+                que_jbs[qi]=cp.deepcopy([(j,l)])
+          if ni:
+            if ni in nod_jbs:
+                nod_jbs[ni]+=cp.deepcopy([(j,l)])
+            elif ni and ni not in nod_jbs and '----' not in ni:
+                nod_jbs[ni]=cp.deepcopy([(j,l)])
+        else:
             qi=q
-            ni=None
+            if qi in que_jbs:
+                que_jbs[qi]+=cp.deepcopy([(j,l)])
+            elif qi not in que_jbs and '----' not in qi:
+                que_jbs[qi]=cp.deepcopy([(j,l)])
+
         # User
         if u in usr_jbs:
             usr_jbs[u]+=cp.deepcopy([(j,l)])
@@ -240,14 +255,16 @@ def main():
         #    print q
             #qi=q.group().split('@')[0]
             #ni=q.group().split('@')[1].translate(None,digits)
-        if qi in que_jbs:
-            que_jbs[qi]+=cp.deepcopy([(j,l)])
-        elif qi and qi not in que_jbs and '----' not in qi:
-            que_jbs[qi]=cp.deepcopy([(j,l)])
-        if ni in nod_jbs:
-                nod_jbs[ni]+=cp.deepcopy([(j,l)])
-        elif ni and ni not in nod_jbs and '----' not in ni:
-                nod_jbs[ni]=cp.deepcopy([(j,l)])
+        #if q:
+        #  print q, qi
+        #  if qi in que_jbs:
+        #    que_jbs[qi]+=cp.deepcopy([(j,l)])
+        #  elif qi not in que_jbs and '----' not in qi:
+        #    que_jbs[qi]=cp.deepcopy([(j,l)])
+        #  if ni in nod_jbs:
+        #        nod_jbs[ni]+=cp.deepcopy([(j,l)])
+        #  elif ni and ni not in nod_jbs and '----' not in ni:
+        #        nod_jbs[ni]=cp.deepcopy([(j,l)])
 
 
 

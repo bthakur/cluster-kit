@@ -7,11 +7,13 @@ import re
 # Simple tool to help build packages
 
 global pkg, pkg_top
-pkg_top='/opt/packages/'
+#pkg_top='/opt/packages/'
+pkg_top='/global/homes/b/bthakur/log/cluster-kit/soft/'
 pkg={}
 pkg{'name'}=""
 pkg{'vers'}=""
-pkg{'src'}={'loc':'', 'get'='[]', 'unz'=[]}
+pkg{'src'}={'loc': 'http://www.netlib.org/lapack/lapack-3.5.0.tgz', '
+             put': pkg_top'+'','get'='['wget']', 'zipped'=True}
 pkg{'conf'}={'pre':'[]', 'cfg':'[]', 'pos':'['make', 'install']'}
 pkg{'make'}={'pre':'[]', 'mak':'[]', 'pos':'['make', 'install']'}
 pkg{'test'}=''
