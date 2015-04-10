@@ -145,7 +145,7 @@ def check_schema(sch,ver):
 def get_hd_line(out,exp):
   # Find header in out.split() based in exp
     head=None
-    for n in range(min(99,len(out))):
+    for n in range(min(9,len(out))):
         l=out[n]
         #print n,l, exp
         m1=re.search(exp['jid'], l, re.IGNORECASE)
@@ -161,12 +161,18 @@ def get_hd_line(out,exp):
 
 def get_header(hd):
   # Get span of header variables
-    head={}
-    for i in range(len(scm_sta)):
-        m=re.search(re_srch[scm_sta[i]] ,hd,re.IGNORECASE)      
+    head=[]
+    #hsplit=
+    # replace based on scheduler
+    #hc=re.sub
+    for hspl in hd.split():
+      for i in range(len(scm_sta)):
+        m=re.search(re_srch[scm_sta[i]] ,hspl,re.IGNORECASE)      
+
         if m:
             #print 'Found ',i, scm_sta[i], re_srch[scm_sta[i]], hd[m.span()[0]:m.span()[1]]
-            head[scm_sta[i]]=m.span()
+            #head[scm_sta[i]]=m.span()
+            head+=[i]
     return head
 
 #----------------------------
@@ -203,6 +209,7 @@ def main():
   # Get header variables
     #sys.exit()
     o_hea=get_header(o_qst['out'][hd].lower())
+    print scm_sta
     print hd,o_hea
     #sys.exit()
   # Create simple representation of user jobs with user keys
@@ -211,14 +218,17 @@ def main():
     que_jbs={}
     nod_jbs={}
     for line in o_qst['out'][hd+1:]:
-        u=line[o_hea['usr'][0]:].split()[0];
-        j=line[o_hea['jid'][0]:].split()[0];
-        #q=line[o_hea['que'][0]:].split()[0];       
-        #q=re.search(sched_stat_ou[o_sch['sch_name']]['que'],line)
-        s=line[o_hea['sta'][0]:].split()[0];
-        l=line[o_hea['slt'][0]:].split()[0];
-        q=line[o_hea['que'][0]:].split()[0];
+        #u=line[o_hea['usr'][0]:].split()[0];
+        #j=line[o_hea['jid'][0]:].split()[0];
+        ##q=line[o_hea['que'][0]:].split()[0];       
+        ##q=re.search(sched_stat_ou[o_sch['sch_name']]['que'],line)
+        #s=line[o_hea['sta'][0]:].split()[0];
+        #l=line[o_hea['slt'][0]:].split()[0];
+        #q=line[o_hea['que'][0]:].split()[0];
         
+        for hi in range(len(scm_sta)):
+            print 'XXX',hi,scm_sta[hi], line.split()[hi], o_hea[hi]
+        sys.exit()
         if 'ge' in o_sch['sch_name']:
           q=re.search(sched_stat_ou[o_sch['sch_name']]['que'],line)
           if q:
