@@ -44,6 +44,7 @@ def check_opts():
     opts='-f:-a:-h-Q'
     if  sys.argv:
         args=sys.argv[1:]
+        nargs=len(args)
         optlist,arglist=getopt.getopt(args,opts)
         print " %s" %optlist
         dic_arg={}
