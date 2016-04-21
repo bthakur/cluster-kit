@@ -9,19 +9,24 @@ import re
 global pkg, pkg_top
 #pkg_top='/opt/packages/'
 pkg_top='/global/homes/b/bthakur/log/cluster-kit/soft/'
+
+#pkg stuff
 pkg={}
-pkg{'name'}=""
-pkg{'vers'}=""
-pkg{'src'}={'loc': 'http://www.netlib.org/lapack/lapack-3.5.0.tgz', '
-             put': pkg_top'+'','get'='['wget']', 'zipped'=True}
-pkg{'conf'}={'pre':'[]', 'cfg':'[]', 'pos':'['make', 'install']'}
+pkg{'name'}=None
+pkg{'vers'}=None
+pkg{'src'}={'loc': 'http://www.netlib.org/lapack/lapack-3.5.0.tgz', 
+            'put': pkg_top'+'','get'='['wget']', 'zipped'='tgz'}
+pkg{'conf'}={'pre':None, 'cfg':None, 'pos':None}
 pkg{'make'}={'pre':'[]', 'mak':'[]', 'pos':'['make', 'install']'}
-pkg{'test'}=''
+pkg{'test'}=None
 
 #
 #pkg_top="/usr/syscom/"
 #pkg_sty="_"
 
+def pkg_populate(apkg):
+    print apkg   
+    
 def get_basebuild():
     distrb=platform.dist()
     complr=platform.python_compiler()
@@ -57,9 +62,10 @@ def configure():
 
 def main():
     pkg_sub=get_basebuild()
-    pkg_pfx=pkg_top+pkg_sub
-    print "    Prefix %s" %pkg_pfx
-    pkg
+    pkg_populate()
+    #pkg_pfx=pkg_top+pkg_sub
+    #print "    Prefix %s" %pkg_pfx
+    #pkg
  
 
 if __name__ == "__main__":
