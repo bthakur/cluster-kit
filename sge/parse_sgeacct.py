@@ -36,7 +36,7 @@ def check_opts():
     # Parse Input:  getopt
     #------------------------     '''
 #-# Globals at the top
-    #global f_fopt;global f_aopt, 
+    global f_fopt;global f_aopt
     global dic_arg
     f_sge=False; f_fopt=False; f_aopt=False;
     #print default_acct;
@@ -64,8 +64,8 @@ def check_opts():
         def_acct=check_sge()
         read_accounting()
         sys.exit()
-        #print "dictionary",dic_arg
-        #sys.exit()
+        print "dictionary",dic_arg
+        sys.exit()
 
 
 def check_sge():
@@ -74,16 +74,18 @@ def check_sge():
     # SGE support:
     #----------------------------    '''
     sge_obj={}
-    #global default_acct, f_sge
+    global default_acct
+    #global f_sge
     try:
         dir_sge_root=os.environ["SGE_ROOT"]
         dir_sge_cell=os.environ["SGE_CELL"]
         sge_obj['sup']=True
     except KeyError:
         print "SGE_ROOT/CELL not defined, Will try reading files locally"
-        f_sge=False
+        sge_obj['sup']=False
+        #f_sge=False
 
-    if  f_sge:				# With sge		
+    if  sge_obj['sup']:				# With sge		
         dir_cur_acct='common'		# Def. location for accounting
         dir_log_acct='log'		# Def. location for log
         sge_cur_acct='accounting'		# Def. accounting file
@@ -278,7 +280,7 @@ def read_accounting(arg_file):
 #----------------------------
 
 def main():
-    #global f_sge, default_acct
+    global f_sge, default_acct
     check_opts()
     #check_sge()
     #acct_jobs

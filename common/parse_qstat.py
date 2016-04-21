@@ -47,9 +47,9 @@ def define_global():
 
     sched_stat_ou={
     'uge': {'jid':'[0-9]+','sta':{'run':'r','wai':'qw'},'que':'([\S]+@[a-zA-Z0-9-]+)','usr':'[a-zA-Z0-9-]+','slt':'[0-9]+','sub':'([0-9//]+)\s([0-9:]+)'}, 
-    'sge': {'jid':'[0-9]+','sta':{'run':'r','wai':'qw'},'que':'([\S]+@[a-zA-Z0-9-]+)','usr':'[a-zA-Z0-9-]+','slt':'[0-9]+','sub':'([0-9//]+)\s([0-9:]+)'},
-    'slurm':  [],
-    'torque':{'jid':'[0-9]+','sta':{'run':'R','wai':'Q'},'que':'([a-zA-Z0-9-_.]+)','usr':'[a-zA-Z0-9-]+','slt':'[0-9]+','sub':'([0-9//]+)\s([0-9:]+)'}
+    'sge':  {'jid':'[0-9]+','sta':{'run':'r','wai':'qw'},'que':'([\S]+@[a-zA-Z0-9-]+)','usr':'[a-zA-Z0-9-]+','slt':'[0-9]+','sub':'([0-9//]+)\s([0-9:]+)'},
+    'slurm': {'jid':'[0-9]+','sta':{'run':'r','wai':'pd'},'que':'([\S]+@[a-zA-Z0-9-]+)','usr':'[a-zA-Z0-9-]+','slt':'[0-9]+','sub':'([0-9//]+)\s([0-9:]+)'},
+    'torque': {'jid':'[0-9]+','sta':{'run':'R','wai':'Q'},'que':'([a-zA-Z0-9-_.]+)','usr':'[a-zA-Z0-9-]+','slt':'[0-9]+','sub':'([0-9//]+)\s([0-9:]+)'}
     }
 
 
@@ -147,14 +147,17 @@ def get_hd_line(out,exp):
     head=None
     for n in range(min(9,len(out))):
         l=out[n]
-        #print n,l, exp
+        print n,l, exp
         m1=re.search(exp['jid'], l, re.IGNORECASE)
         m2=re.search(exp['que'], l, re.IGNORECASE)
         m3=re.search(exp['usr'], l, re.IGNORECASE)
         if m1 and m2 and m3:
            head=n
            break
-    #print head
+    print 'Header line #',n
+    print '...........'
+    print l
+    print '...........'
     #sys.exit()
     return head
 
@@ -173,6 +176,11 @@ def get_header(hd):
             #print 'Found ',i, scm_sta[i], re_srch[scm_sta[i]], hd[m.span()[0]:m.span()[1]]
             #head[scm_sta[i]]=m.span()
             head+=[i]
+    print 'Header Value #'
+    print '...........'
+    print scm_sta
+    print head
+    print '...........'
     return head
 
 #----------------------------
@@ -225,8 +233,13 @@ def main():
         #s=line[o_hea['sta'][0]:].split()[0];
         #l=line[o_hea['slt'][0]:].split()[0];
         #q=line[o_hea['que'][0]:].split()[0];
-        
+        print line
         for hi in range(len(scm_sta)):
+	    print 1,hi
+	    print 2,o_hea
+	    print 3, o_hea[hi]
+	    print scm_sta
+	    print line.split()[hi]
             print 'XXX',hi,scm_sta[hi], line.split()[hi], o_hea[hi]
         sys.exit()
         if 'ge' in o_sch['sch_name']:
