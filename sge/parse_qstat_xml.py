@@ -84,8 +84,6 @@ def get_elements_byschema(xml_doc, xml_sche, xml_typ):
                                         "http://www.w3.org/2001/XMLSchema"},
                             n=xml_typ)
 
-def check_schema(sch,ver):
-    ava_scm={'uge-8.1.7':''}
 
 #----------------------------
 # Main
@@ -132,10 +130,6 @@ def main():
        jobs = root.getElementsByTagName("job_list")
        for job in jobs:
 	   print job.tagName
-	   #print job.data
-	   #print job.getElementsByTagName('JB_owner')
-	   #print job.getElementsByTagName('JB_owner').toxml()
-	   #print job.getElementsByTagName('JB_job_number')
 	   for elem in job.childNodes:
 	       #if elem.nodeName != '#text':
 	       if elem.nodeType != elem.TEXT_NODE:
@@ -151,67 +145,66 @@ def main():
 
   # Using etree
     if True: 
-       for job in root.findall(".//*[@state='running']"):
-            print 'Tag',job.tag
-            print 'Value', job.text
-            print ET.tostring(job)
-            #print job.attrib.get('JB_owner');
-            #print job.attrib.get('JB_job_number')
-            #print list(job)
-            for e in job:
-                #print  e.text
-                #print e.attrib.get('JB_owner')
-                #sys.exit()
-                print ET.tostring(e)
-                #print e.tab, e.text
-                #jobs[e.tab]=e.text
+        running=0
+        allrunning=[]
+        for job in root.findall(".//*[@state='running']"):
+           #print ET.tostring(job)
+	   running+=1
+	   jrunning={}
+           for e in job:
+               #print ET.tostring(e)
+               #print   e.tag, e.text
+	       jrunning[e.tag]=e.text
+               #jobs[e.tab]=e.text
+	   #print jrunning
+	   allrunning.append(cp.deepcopy(jrunning))
+       #
+       #print 'Running jobs',running
+       #
+        pending=0
+        allpending=[]
+        for job in root.findall(".//*[@state='pending']"):
+           #print ET.tostring(job)
+           pending+=1
+	   jpending={}
+           for e in job:
+                #print ET.tostring(e)
+                #print   e.tag, e.text
+		jpending[e.tag]=e.text
+	   #print jpending.values()
+	   allpending.append(cp.deepcopy(jpending))
     #
-    sys.exit()
+        print 'Running jobs',running
+        #print pp.pprint(allrunning)
+        print 'Pending jobs',pending
+        #print pp.pprint(allpending)
 
-   # All running jobs
-    #for jobs in root:
-    #	print 'Running Jobs'
-#    for job in root.findall(".//*[@state='running']"):
-#
-    
+  # Analytics on allrunning
+	jobs_by_user={}
+	for j in allrunning:
+            job_by_user={}
+	    qname=j['queue_name']
+	    jobowner=j['JB_owner']
+	    jobnumber=j['JB_job_number']
+	    jobstart=j['JAT_start_time']
+	    jobslots=j['slots']
+	    if jobowner in jobs_by_user:
+		#jobs_by_user[jobowner]+=[jobslots,qname,jobstart]
+		jobs_by_user[jobowner][1]+=int(1)
+		jobs_by_user[jobowner][2]+=int(jobslots)
+		jobs_by_user[jobowner][3]+=[jobnumber]
+		#jobs_by_user[jobowner]+=[jobslots,qname]
+	    else:
+		jobs_by_user[jobowner]=[1,int(1),int(jobslots),[jobnumber]]
 
-    sys.exit()
-		
-    #pp.pprint(jobs)
-    sys.exit()
-    for job in root.findall(".//*[@state='running']"):
-	    print 'Tag',job.tag
-	    print 'Value', job.text
-	    #sys.exit()
-	    #print ET.tostring(job)
-	    #print job.attrib.get('JB_owner');
-	    #print job.attrib.get('JB_job_number')
-	    #print list(job)
-	    #for e in job:
-		#print  e.text
-                #print e.attrib.get('JB_owner')
-                #sys.exit()
-		#print ET.tostring(e)
-		#print e.tab, e.text
-		#jobs[e.tab]=e.text
-    print 'Pending Jobs'
-    sys.exit()
-    for job in root.findall(".//*[@state='pending']"):
-            #print job.tag, job.attrib
-            print job
-            #print job.attrib
-    #print 'pending'
-    #for jobs in root.findall(".//*[@state='pending']"):
-    #    for job in jobs:
-    #        print job
-
-    # Jobs requesting 16 slots
-    #for job in root.findall(".//job_list[@state='running']/[slots='16']"):
-    #	print job
-
-    #for job in root.findall(".//job_list[@state='pending']/"):
-    #    print '   |--',job.tag, job.attrib, job.text
-
+	# Sort and get unique jobids
+	for j,l in jobs_by_user.items():
+	    #print j,list(set(l[3]))
+	    jobs_by_user[j][3]=list(set(l[3]))
+	    jobs_by_user[j][0]=len(jobs_by_user[j][3])
+	
+	pp.pprint( jobs_by_user,depth=2,indent=4 )
+	
 
 if __name__ == "__main__":
      main()
