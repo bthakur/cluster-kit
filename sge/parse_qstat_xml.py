@@ -13,6 +13,9 @@ import xml.etree.ElementTree as ET
 
 def define_global():
   # Global definitions
+  # formats
+    global format_T
+    format_T='{:<30}{:<10}{:<10}{:<10}'
   # Supported schedulers
     global sched_supp
     sched_supp={
@@ -180,8 +183,13 @@ def main():
 
   # Analytics on allrunning
 	jobs_by_user={}
+	jobs_by_node={}
+	jobs_by_queue={}
+	#
 	jobs_by_all={}
 	jobs_by_all['AllUsers']=[0,0,0,set()]
+	jobs_by_all['AllQueues']=[0,0,0,set()]
+        jobs_by_all['AllNodes']=[0,0,0,set()]
 	print "Jobs_by_user Jobs Tasks Slots JobID's"
 	for j in allrunning:
             job_by_user={}
@@ -190,9 +198,20 @@ def main():
 	    jobnumber=j['JB_job_number']
 	    jobstart=j['JAT_start_time']
 	    jobslots=j['slots']
+	#   queue processing
+	    qname_q=qname.split('@')[0]
+	    qname_r=qname.split('@')[1][0:4]
+            #print qname_q, qname_r
 	    jobs_by_all['AllUsers'][1]+=int(1)
 	    jobs_by_all['AllUsers'][2]+=int(jobslots)
-	    #jobs_by_all['AllUsers'][3].add(jobnumber)
+            jobs_by_all['AllQueues'][1]+=int(1)
+            jobs_by_all['AllQueues'][2]+=int(jobslots)
+            jobs_by_all['AllNodes'][1]+=int(1)
+            jobs_by_all['AllNodes'][2]+=int(jobslots)
+	    jobs_by_all['AllUsers'][3].add(jobnumber)
+            jobs_by_all['AllQueues'][3].add(jobnumber)
+            jobs_by_all['AllNodes'][3].add(jobnumber)
+	    #
 	    if jobowner in jobs_by_user:
 		jobs_by_user[jobowner][1]+=int(1)
 		jobs_by_user[jobowner][2]+=int(jobslots)
@@ -201,20 +220,41 @@ def main():
 	    else:
 		jobs_by_user[jobowner]=[1,int(1),int(jobslots),set([jobnumber])]
 	#
+	    if qname_q in jobs_by_queue:
+                jobs_by_queue[qname_q][1]+=int(1)
+                jobs_by_queue[qname_q][2]+=int(jobslots)
+                jobs_by_queue[qname_q][3].add(jobnumber)
+                #jobs_by_user[jobowner]+=[jobslots,qname]
+            else:
+                jobs_by_queue[qname_q]=[1,int(1),int(jobslots),set([jobnumber])]
+	#
+            if qname_r in jobs_by_node:
+                jobs_by_node[qname_r][1]+=int(1)
+                jobs_by_node[qname_r][2]+=int(jobslots)
+                jobs_by_node[qname_r][3].add(jobnumber)
+                #jobs_by_user[jobowner]+=[jobslots,qname]
+            else:
+                jobs_by_node[qname_r]=[1,int(1),int(jobslots),set([jobnumber])]
+	#
+	for v0 in ['user', 'queue', 'node']:
+	    v1='jobs_by_'+v0
+	    d=locals()[v1]
+	    print '---------'
+	    sumj=0
+	    print( format_T.format(' ','Jobs','Tasks', 'Slots' ))
+	    for j,l in d.items():
+		 print( format_T.format(j,len(l[3]),l[1], l[2] ))
+	    print '----------'
+	    print( format_T.format('ALL-'+v0,len(l[3]),l[1], l[2] ))	
 
-	# Sort and get unique jobids
-	#jobs_by_all['AllUsers'][0]=0
-	for j,l in jobs_by_user.items():
-	    # put the set back as a list
-	    jobs_by_user[j][3]=list(l[3])
-	    jobs_by_user[j][0]=len(jobs_by_user[j][3])
-	    jobs_by_all['AllUsers'][0]+=jobs_by_user[j][0]
-	# Now for all users
-	jobs_by_all['AllUsers'][3]=list(l[3])
-	pp.pprint( jobs_by_user,depth=2,indent=4 )
-	print '    ----------'
-	pp.pprint( jobs_by_all,depth=2,indent=4 )
-	print '          '
+	print '-------'
+	#
+	
+        #print 'Running jobs',running
+        #print pp.pprint(allrunning)
+        #print 'Pending jobs',pending
+	
+	sys.exit()
 
   # Analytics on allpending
         jobs_by_user={}
@@ -251,6 +291,7 @@ def main():
         jobs_by_all['AllUsers'][3]=list(l[3])
         pp.pprint( jobs_by_user,depth=2,indent=4 )
         print '    ----------'
+
         pp.pprint( jobs_by_all,depth=2,indent=4 )
         print '          '
 
