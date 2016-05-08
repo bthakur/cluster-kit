@@ -18,7 +18,7 @@ def define_global():
     sched_supp={
     'uge':
     {     'sch_name':'uge',
-          'sch_stat':['qstat','-u','b*','-xml'],
+          'sch_stat':['qstat','-u','*','-xml'],
           'sch_host':['qhost','-j'],
           'sch_ver':['-help']
     },
@@ -100,7 +100,6 @@ def main():
   # Run qstat or read from a file
     sch_stat=sched_supp['uge']['sch_stat']
     o_qst=run_command(sch_stat)
-
     # Using etree
     if True:
        if o_qst['out'] != None:
@@ -181,6 +180,9 @@ def main():
 
   # Analytics on allrunning
 	jobs_by_user={}
+	jobs_by_all={}
+	jobs_by_all['AllUsers']=[0,0,0,set()]
+	print "Jobs_by_user Jobs Tasks Slots JobID's"
 	for j in allrunning:
             job_by_user={}
 	    qname=j['queue_name']
@@ -188,24 +190,69 @@ def main():
 	    jobnumber=j['JB_job_number']
 	    jobstart=j['JAT_start_time']
 	    jobslots=j['slots']
+	    jobs_by_all['AllUsers'][1]+=int(1)
+	    jobs_by_all['AllUsers'][2]+=int(jobslots)
+	    #jobs_by_all['AllUsers'][3].add(jobnumber)
 	    if jobowner in jobs_by_user:
-		#jobs_by_user[jobowner]+=[jobslots,qname,jobstart]
 		jobs_by_user[jobowner][1]+=int(1)
 		jobs_by_user[jobowner][2]+=int(jobslots)
-		jobs_by_user[jobowner][3]+=[jobnumber]
+		jobs_by_user[jobowner][3].add(jobnumber)
 		#jobs_by_user[jobowner]+=[jobslots,qname]
 	    else:
-		jobs_by_user[jobowner]=[1,int(1),int(jobslots),[jobnumber]]
+		jobs_by_user[jobowner]=[1,int(1),int(jobslots),set([jobnumber])]
+	#
 
 	# Sort and get unique jobids
+	#jobs_by_all['AllUsers'][0]=0
 	for j,l in jobs_by_user.items():
-	    #print j,list(set(l[3]))
-	    jobs_by_user[j][3]=list(set(l[3]))
+	    # put the set back as a list
+	    jobs_by_user[j][3]=list(l[3])
 	    jobs_by_user[j][0]=len(jobs_by_user[j][3])
-	
+	    jobs_by_all['AllUsers'][0]+=jobs_by_user[j][0]
+	# Now for all users
+	jobs_by_all['AllUsers'][3]=list(l[3])
 	pp.pprint( jobs_by_user,depth=2,indent=4 )
-	
+	print '    ----------'
+	pp.pprint( jobs_by_all,depth=2,indent=4 )
+	print '          '
+
+  # Analytics on allpending
+        jobs_by_user={}
+        jobs_by_all={}
+        jobs_by_all['AllUsers']=[0,0,0,set()]
+        print "Jobs_by_user Jobs Tasks Slots JobID's"
+        for j in allpending:
+            job_by_user={}
+            qname=j['queue_name']
+            jobowner=j['JB_owner']
+            jobnumber=j['JB_job_number']
+            jobstart=j['JB_submission_time']
+            jobslots=j['slots']
+            jobs_by_all['AllUsers'][1]+=int(1)
+            jobs_by_all['AllUsers'][2]+=int(jobslots)
+            #jobs_by_all['AllUsers'][3].add(jobnumber)
+            if jobowner in jobs_by_user:
+                jobs_by_user[jobowner][1]+=int(1)
+                jobs_by_user[jobowner][2]+=int(jobslots)
+                jobs_by_user[jobowner][3].add(jobnumber)
+                #jobs_by_user[jobowner]+=[jobslots,qname]
+            else:
+                jobs_by_user[jobowner]=[1,int(1),int(jobslots),set([jobnumber])]
+        #
+
+        # Sort and get unique jobids
+        #jobs_by_all['AllUsers'][0]=0
+        for j,l in jobs_by_user.items():
+            # put the set back as a list
+            jobs_by_user[j][3]=list(l[3])
+            jobs_by_user[j][0]=len(jobs_by_user[j][3])
+            jobs_by_all['AllUsers'][0]+=jobs_by_user[j][0]
+        # Now for all users
+        jobs_by_all['AllUsers'][3]=list(l[3])
+        pp.pprint( jobs_by_user,depth=2,indent=4 )
+        print '    ----------'
+        pp.pprint( jobs_by_all,depth=2,indent=4 )
+        print '          '
 
 if __name__ == "__main__":
      main()
-
