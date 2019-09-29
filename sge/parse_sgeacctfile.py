@@ -19,19 +19,17 @@ if args.file_inp:
 else:
     parser.print_help()
     sys.exit()
-
+OneK=1000.
+OneM=1000000.
 for l in lines:
-    #print line.split(':')
     line=l.split(':')
     if l[0] != '#':
         queue=line[0]
         host=line[1]
         user=line[3]
         jobid=line[5]
-        tsub=line[8]
-        tbeg=line[9]
-        tend=line[10]
-        print l
+        tsub=int(line[8]/OneM); tbeg=int(line[9]/OneM); tend=int(line[10]/OneM)
+        #print l
         print queue,host,user,jobid,tsub,tbeg,tend
 
 
