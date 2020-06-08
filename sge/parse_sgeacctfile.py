@@ -5,72 +5,111 @@
 import argparse as ap
 import datetime as dt
 import sys
+import re
+from collections import OrderedDict as od
 
 
-def epoch_to_date(secs_i):
-    t_date = dt.datetime.fromtimestamp(
-               secs_i.strftime('%Y-%m-%d:%H%M'))
-    return t_date
+def date_to_year(date_i):
+    delta = {}
+    delta_year_start = date_i - dt.datetime(date_i.year, 1, 1)
+    delta['day'] = delta_year_start.days+1
+    delta['sec'] = delta_year_start.total_seconds()
+    return delta
+
+
+def epoch_to_year(secs_i):
+    delta = {}
+    curr_year = dt.datetime.now().year
+    date_i = dt.datetime.fromtimestamp(secs_i)
+    #
+    date_year_start = dt.datetime(curr_year, 1, 1)
+    delta_year_start = date_i - date_year_start
+    delta['sec'] = delta_year_start.total_seconds()
+    delta['day'] = delta_year_start.days+1
+    return delta
+
 
 def parse():
     parser_i = ap.ArgumentParser()
-    parser_i.add_argument('-f',action='store',dest='file_inp',nargs=1,
-        help="Input accounting file to be parsed")
+    parser_i.add_argument('-f', action='store', dest='file_inp', nargs=1,
+                          help="Input accounting file to be parsed")
     return parser_i
 
 
-args = parse().parse_args()
-print(args, type(args))
+parser = parse()
+args = parser.parse_args()
 
 if args.file_inp:
     inputf = args.file_inp[0]
-    with open(inputf,'r') as fi:
-        lines=fi.readlines()
+    with open(inputf, 'r') as fi:
+        lines = fi.readlines()
 else:
     parser.print_help()
     sys.exit()
 
 
-OneK=1000.
-OneM=1000000.
-Year=2020
+OneK = 1000.
+OneM = 1000000.
 
-#print dt.datetime.tzinfo.est()
-t_now=dt.datetime.today()
-t_epoch=dt.datetime(1970,1,1)
-t_beg2019=dt.datetime(2020,1,1,0,0)
-#t_begyear=
-#
-t_nowsecs=t_now
-t_del2019secs=(t_beg2019 - t_epoch).total_seconds()
-t_del2019days=(t_beg2019 - t_epoch).days
-print (t_epoch, t_beg2019,t_now)
-print (t_del2019secs,t_del2019days)
+# now = dt.datetime.now()
+# print(now)
+# print(date_this_year)
+# sys.exit()
+# days = list(range(365))
+days = od()
 
-#sys.exit()
+re_pattern = "h_vmem=([\d]+)(\w)"
+c_pattern = re.compile(re_pattern)
 
-sumw=0
 for l in lines:
-  line=l.split(':')
-  #print(line)
-  if not line[0].startswith('#'):
-        queue=line[0]
-        host=line[1]
-        user=line[3]
-        jobid=line[5]
-        rsrc=line[39]
-        #slots=
-        #vmem
-        proj=line[31]
-        pe=line[33]
-        slots=line[34]
-        tsub=float(line[8])/OneK;  tsub_19=tsub-t_del2019secs
-        tbeg=float(line[9])/OneK;  tbeg_19=(tbeg-t_del2019secs)
-        tend=float(line[10])/OneK; tend_19=(tend-t_del2019secs)
-        twai=round(tbeg_19-tsub_19,2)
-        trun=round(tend_19-tbeg_19,2)
-        #print l
-        #print queue,host,user,jobid,tsub_19,tbeg_19,tend_19
-        #print(queue,host,user,proj,pe,slots,jobid,twai,trun,rsrc)
-        sumw+=float(slots)*trun
-print(round(sumw,2))
+    line = l.split(':')
+    # print(line)
+    if not line[0].startswith('#'):
+        queue = line[0]
+        host = line[1].split('.')[0]
+        user = line[3]
+        jobid = line[5]
+        hres = line[39].strip()
+        # slots=
+        # vmem
+        proj = line[31]
+        pe = line[33]
+        slots = line[34]
+
+        tsub = float(line[8])/OneK
+        tbeg = float(line[9])/OneK
+        tend = float(line[10])/OneK
+
+        tsub_this_year = epoch_to_year(tsub)
+        tbeg_this_year = epoch_to_year(tbeg)
+        tend_this_year = epoch_to_year(tend)
+
+        wait_hours = round((tbeg-tsub)/3600., 2)
+        run_hours = round((tend-tbeg)/3600., 2)
+
+        # print(tsub, tbeg, tend)
+        # print(tsub_this_year, tbeg_this_year, tend_this_year)
+        # print(queue, host, user, proj, pe, slots, jobid,
+        #      tsub, wait_hours, run_hours, hres)
+
+        day = tbeg_this_year['day']
+        days.setdefault(tbeg_this_year['day'], 0)
+        days[tbeg_this_year['day']] += run_hours
+
+        match = c_pattern.search(hres)
+        if match:
+            # print("matching", match.group(), match.start(), match.end())
+            # print("matching", match[1], match[2])
+            if match[2].lower() == 'g':
+                # print(match[1], 'g')
+                mem = int(slots)*match[1]
+            elif match[2].lower() == 'm':
+                # print(match[1], 'm')
+                mem = int(slots)*match[1]/1000
+            # print("matching", hres[match.start(): match.end()])
+        print(day, queue, host, user, proj, slots, mem, jobid,
+              tsub, wait_hours, run_hours)
+
+print(days)
+
+# print(round(sumw,2))
