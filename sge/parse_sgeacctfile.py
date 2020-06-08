@@ -4,8 +4,10 @@
 
 import argparse as ap
 import datetime as dt
+import pprint as pp
 import sys
 import re
+import traceback
 from collections import OrderedDict as od
 
 
@@ -41,7 +43,7 @@ args = parser.parse_args()
 
 if args.file_inp:
     inputf = args.file_inp[0]
-    with open(inputf, 'r') as fi:
+    with open(inputf, 'rb') as fi:
         lines = fi.readlines()
 else:
     parser.print_help()
@@ -61,9 +63,10 @@ days = od()
 re_pattern = "h_vmem=([\d]+)(\w)"
 c_pattern = re.compile(re_pattern)
 
-for l in lines:
-    line = l.split(':')
-    # print(line)
+for l in enumerate(lines):
+    # print(type(l))
+    line = l[1].decode("utf-8", errors="ignore").split(':')
+    # print(l)
     if not line[0].startswith('#'):
         queue = line[0]
         host = line[1].split('.')[0]
@@ -80,36 +83,45 @@ for l in lines:
         tbeg = float(line[9])/OneK
         tend = float(line[10])/OneK
 
-        tsub_this_year = epoch_to_year(tsub)
-        tbeg_this_year = epoch_to_year(tbeg)
-        tend_this_year = epoch_to_year(tend)
+        failed = line[11]
 
-        wait_hours = round((tbeg-tsub)/3600., 2)
-        run_hours = round((tend-tbeg)/3600., 2)
+        if tbeg == 0:
+            print("error", day, jobid, queue, host, user, proj, failed)
+        else:
+            tsub_this_year = epoch_to_year(tsub)
+            tbeg_this_year = epoch_to_year(tbeg)
+            tend_this_year = epoch_to_year(tend)
 
-        # print(tsub, tbeg, tend)
-        # print(tsub_this_year, tbeg_this_year, tend_this_year)
-        # print(queue, host, user, proj, pe, slots, jobid,
-        #      tsub, wait_hours, run_hours, hres)
+            wait_hours = round((tbeg-tsub)/3600., 2)
+            run_hours = round((tend-tbeg)/3600., 2)
 
-        day = tbeg_this_year['day']
-        days.setdefault(tbeg_this_year['day'], 0)
-        days[tbeg_this_year['day']] += run_hours
+            # print(tsub, tbeg, tend)
+            # print(tsub_this_year, tbeg_this_year, tend_this_year)
+            # print(queue, host, user, proj, pe, slots, jobid,
+            #      tsub, wait_hours, run_hours, hres)
 
-        match = c_pattern.search(hres)
-        if match:
-            # print("matching", match.group(), match.start(), match.end())
-            # print("matching", match[1], match[2])
-            if match[2].lower() == 'g':
-                # print(match[1], 'g')
-                mem = int(slots)*match[1]
-            elif match[2].lower() == 'm':
-                # print(match[1], 'm')
-                mem = int(slots)*match[1]/1000
-            # print("matching", hres[match.start(): match.end()])
-        print(day, queue, host, user, proj, slots, mem, jobid,
-              tsub, wait_hours, run_hours)
+            day = tbeg_this_year['day']
+            days.setdefault(tbeg_this_year['day'], [0, 0, 0])
 
-print(days)
+            match = c_pattern.search(hres)
+            if match:
+                # print("matching", match.group(), match.start(), match.end())
+                # print("matching", match[1], match[2])
+                if match[2].lower() == 'g':
+                    # print(match[1], 'g')
+                    mem = float(slots)*float(match[1])
+                elif match[2].lower() == 'm':
+                    # print(match[1], 'm')
+                    mem = (float(slots)*float(match[1]))/1000.
+                else:
+                    mem = 0.0
+                print("matching", hres[match.start(): match.end()])
+            days[tbeg_this_year['day']][0] += run_hours
+            days[tbeg_this_year['day']][1] += wait_hours
+            days[tbeg_this_year['day']][2] += int(mem)
+            print(day, jobid, queue, host, user, proj, slots, mem, jobid,
+                  tsub, wait_hours, run_hours)
+
+pp.pprint(days)
 
 # print(round(sumw,2))
