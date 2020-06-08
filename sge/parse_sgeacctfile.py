@@ -83,13 +83,15 @@ for l in enumerate(lines):
         tbeg = float(line[9])/OneK
         tend = float(line[10])/OneK
 
+        tbeg_this_year = epoch_to_year(tbeg)
+        day = tbeg_this_year['day']
+
         failed = line[11]
 
         if tbeg == 0:
             print("error", day, jobid, queue, host, user, proj, failed)
         else:
             tsub_this_year = epoch_to_year(tsub)
-            tbeg_this_year = epoch_to_year(tbeg)
             tend_this_year = epoch_to_year(tend)
 
             wait_hours = round((tbeg-tsub)/3600., 2)
@@ -100,7 +102,7 @@ for l in enumerate(lines):
             # print(queue, host, user, proj, pe, slots, jobid,
             #      tsub, wait_hours, run_hours, hres)
 
-            day = tbeg_this_year['day']
+            
             days.setdefault(tbeg_this_year['day'], [0, 0, 0])
 
             match = c_pattern.search(hres)
@@ -115,7 +117,7 @@ for l in enumerate(lines):
                     mem = (float(slots)*float(match[1]))/1000.
                 else:
                     mem = 0.0
-                print("matching", hres[match.start(): match.end()])
+                # print("matching", hres[match.start(): match.end()])
             days[tbeg_this_year['day']][0] += run_hours
             days[tbeg_this_year['day']][1] += wait_hours
             days[tbeg_this_year['day']][2] += int(mem)
