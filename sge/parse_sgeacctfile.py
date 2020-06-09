@@ -154,7 +154,7 @@ for l in enumerate(lines):
                 nodes[host][0] += run_hours*float(slots)
                 nodes[host][1] += run_hours*float(mem)
                 
-
+print('Min Max', minDay, maxDay)
 pp.pprint(nodes)
 pp.pprint(days)
 #pp.pprint(hours)
