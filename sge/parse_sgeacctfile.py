@@ -100,7 +100,7 @@ for l in enumerate(lines):
         failed = line[11]
 
         if tbeg == 0:
-            print("error", day, jobid, queue, host, user, proj, failed)
+            print("error", jobid, queue, host, user, proj, failed)
 
         else:
 
@@ -136,8 +136,9 @@ for l in enumerate(lines):
                 #
                 for d in range(tbeg_day, tend_day+1):
                     days.setdefault(d, [0, 0])
-                    days[d][0] += float(slots)*(run_hours)/float(tdays)
-                    days[d][1] += int(mem)*(run_hours)/float(tdays)
+                    daily_frac = run_hours/(24.*float(tdays))
+                    days[d][0] += float(slots)*daily_frac
+                    days[d][1] += int(mem)*daily_frac
 
                 for h in range(tbeg_hour, tend_hour+1):
                     hours.setdefault(h, [0, 0])
@@ -146,7 +147,7 @@ for l in enumerate(lines):
 
                 nodes.setdefault(host, [0, 0])
                 nodes[host][0] += run_hours*float(slots)
-                nodes[host][0] += run_hours*float(mem)
+                nodes[host][1] += run_hours*float(mem)
                 
 
 pp.pprint(nodes)
