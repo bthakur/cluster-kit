@@ -132,7 +132,7 @@ for l in enumerate(lines):
             tdays = int(tend_day - tbeg_day + 1)
             tdelta = tend - tbeg
 
-            if tend > tbeg:
+            if tend > tbeg and tbeg_hour > 0:
                 #
                 for d in range(tbeg_day, tend_day+1):
                     days.setdefault(d, [0, 0])
