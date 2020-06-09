@@ -56,16 +56,12 @@ OneM = 1000000.
 
 minDay = 365
 maxDay = 0
+minHour = 10000
+maxHour = 0
 
-# now = dt.datetime.now()
-# print(now)
-# print(date_this_year)
-# sys.exit()
-# days = list(range(365))
 days = od()
 nodes = od()
 hours = od()
-
 
 re_pattern = "h_vmem=([\d]+)(\w)"
 c_pattern = re.compile(re_pattern)
@@ -111,14 +107,16 @@ for l in enumerate(lines):
             tbeg_this_year = epoch_to_year(tbeg)['sec']
             tend_this_year = epoch_to_year(tend)['sec']
 
-
             tbeg_hour = int(tbeg_this_year/3600.)
             tend_hour = int(tend_this_year/3600.)
             tbeg_day = int(tbeg_this_year/(3600.*24))
             tend_day = int(tend_this_year/(3600.*24))
-   
+
             maxDay = max(tend_day, maxDay)
-            minDay = min(tbeg_day, minDay)  
+            minDay = min(tbeg_day, minDay)
+
+            maxHour = max(tend_hour, maxHour)
+            minHour = min(tbeg_hour, minHour)
 
             match = c_pattern.search(hres)
             if match:
@@ -133,7 +131,7 @@ for l in enumerate(lines):
                 else:
                     mem = 0.0
                 # print("matching", hres[match.start(): match.end()])
-                
+
             tdays = int(tend_day - tbeg_day + 1)
             tdelta = tend - tbeg
 
@@ -153,11 +151,13 @@ for l in enumerate(lines):
                 nodes.setdefault(host, [0, 0])
                 nodes[host][0] += run_hours*float(slots)
                 nodes[host][1] += run_hours*float(mem)
-                
-print('Min Max', minDay, maxDay)
+
+print('Min Max Hour', minHour, maxHour)
+print('Min Max Day ', minDay, maxDay)
+
 pp.pprint(nodes)
 pp.pprint(days)
-#pp.pprint(hours)
+pp.pprint(hours)
 
 # print(slots_by_hours)
 # for i,v in np.ndenumerate(hours.nonzero()):
