@@ -54,6 +54,9 @@ else:
 OneK = 1000.
 OneM = 1000000.
 
+minDay = 365
+maxDay = 0
+
 # now = dt.datetime.now()
 # print(now)
 # print(date_this_year)
@@ -113,7 +116,9 @@ for l in enumerate(lines):
             tend_hour = int(tend_this_year/3600.)
             tbeg_day = int(tbeg_this_year/(3600.*24))
             tend_day = int(tend_this_year/(3600.*24))
-            
+   
+            maxDay = max(tend_day, maxDay)
+            minDay = min(tbeg_day, minDay)  
 
             match = c_pattern.search(hres)
             if match:
