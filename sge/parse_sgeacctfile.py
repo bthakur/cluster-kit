@@ -61,12 +61,7 @@ OneM = 1000000.
 # days = list(range(365))
 days = od()
 nodes = od()
-#hours = list(range(-365*24, 365*24))
-hours = {}
-hour_array = list(range(-365*24, 365*24))
-
-slots_by_hour = [range(365*24)]
-mem_by_hour = [range(365*24)]
+hours = od()
 
 
 re_pattern = "h_vmem=([\d]+)(\w)"
@@ -81,6 +76,10 @@ for l in enumerate(lines):
         host = line[1].split('.')[0]
         user = line[3]
         jobid = line[5]
+        # maxvmem,maxrss,maxpss = 
+        # cpucycles = line[36]
+        # intmem = line[37]
+        # io = line[38]
         hres = line[39].strip()
         # slots=
         # vmem
@@ -92,10 +91,11 @@ for l in enumerate(lines):
         tbeg = float(line[9])/OneK
         tend = float(line[10])/OneK
 
-        tbeg_this_year = epoch_to_year(tbeg)
+        wait_hours = round((tbeg-tsub)/3600., 2)
+        run_hours = round((tend-tbeg)/3600., 2)
 
-        day = tbeg_this_year['day']
-        sec = tbeg_this_year['sec']
+        # day = tbeg_this_year['day']
+        # sec = tbeg_this_year['sec']
 
         failed = line[11]
 
@@ -103,28 +103,17 @@ for l in enumerate(lines):
             print("error", day, jobid, queue, host, user, proj, failed)
 
         else:
+
             tsub_this_year = epoch_to_year(tsub)['sec']
+            tbeg_this_year = epoch_to_year(tbeg)['sec']
             tend_this_year = epoch_to_year(tend)['sec']
 
-            wait_hours = round((tbeg-tsub)/3600., 2)
-            run_hours = round((tend-tbeg)/3600., 2)
 
-            tbeg_hour = int(sec/3600.)
-            tend_hour = int(sec/3600.)
-
-                # hours[tbeg_hour: tend_hour+1] += float(slots)
-                #print(hours)
-            # print(tbeg_hour, tend_hour, slots) 
-            nodes.setdefault(host, 0)
-            if tbeg > 0:
-                nodes[host] += run_hours
-
-            # print(tsub, tbeg, tend)
-            # print(tsub_this_year, tbeg_this_year, tend_this_year)
-            # print(queue, host, user, proj, pe, slots, jobid,
-            #      tsub, wait_hours, run_hours, hres)
-
-            days.setdefault(tbeg_this_year['day'], [0, 0, 0])
+            tbeg_hour = int(tbeg_this_year/3600.)
+            tend_hour = int(tend_this_year/3600.)
+            tbeg_day = int(tbeg_this_year/(3600.*24))
+            tend_day = int(tend_this_year/(3600.*24))
+            
 
             match = c_pattern.search(hres)
             if match:
@@ -138,27 +127,31 @@ for l in enumerate(lines):
                     mem = (float(slots)*float(match[1]))/1000.
                 else:
                     mem = 0.0
-
                 # print("matching", hres[match.start(): match.end()])
-            days[day][0] += float(slots)*run_hours
-            days[day][1] += wait_hours
-            days[day][2] += int(mem)
+                
+            tdays = int(tend_day - tbeg_day + 1)
+            tdelta = tend - tbeg
 
-            if tbeg > 0:
+            if tend > tbeg:
+                #
+                for d in range(tbeg_day, tend_day+1):
+                    days.setdefault(d, [0, 0])
+                    days[d][0] += float(slots)*(run_hours)/float(tdays)
+                    days[d][1] += int(mem)*(run_hours)/float(tdays)
+
                 for h in range(tbeg_hour, tend_hour+1):
                     hours.setdefault(h, [0, 0])
-                    #print(h, slots, mem)
                     hours[h][0] += int(slots)
                     hours[h][1] += int(mem)
-                    
-            # gbuse[tbeg_hour: tend_hour] += int(mem)
 
-            # print(day, jobid, queue, host, user, proj, slots, mem, jobid,
-            #      tsub, wait_hours, run_hours)
+                nodes.setdefault(host, [0, 0])
+                nodes[host][0] += run_hours*float(slots)
+                nodes[host][0] += run_hours*float(mem)
+                
 
-pp.pprint(days)
 pp.pprint(nodes)
-pp.pprint(hours)
+pp.pprint(days)
+#pp.pprint(hours)
 
 # print(slots_by_hours)
 # for i,v in np.ndenumerate(hours.nonzero()):
