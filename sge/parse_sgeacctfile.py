@@ -62,6 +62,7 @@ maxHour = 0
 days = od()
 nodes = od()
 hours = od()
+seconds = od()
 
 re_pattern = "h_vmem=([\d]+)(\w)"
 c_pattern = re.compile(re_pattern)
@@ -92,6 +93,7 @@ for l in enumerate(lines):
 
         wait_hours = round((tbeg-tsub)/3600., 2)
         run_hours = round((tend-tbeg)/3600., 2)
+        run_secs = tend - tbeg
 
         # day = tbeg_this_year['day']
         # sec = tbeg_this_year['sec']
@@ -137,18 +139,32 @@ for l in enumerate(lines):
 
             if tdelta > 2 and tbeg_hour > 0:
                 #
+                
                 for d in range(tbeg_day, tend_day+1):
                     days.setdefault(d, [0, 0])
                     daily_frac = run_hours/(24.*float(tdays))
                     days[d][0] += float(slots)*daily_frac
                     days[d][1] += int(mem)*daily_frac
 
-                for h in range(tbeg_hour, tend_hour+1):
-                    hours.setdefault(h, [0, 0])
-                    hourly_frac = run_hours/(tend_hour-tbeg_hour+1)
-                    hours[h][0] += int(slots)*hourly_frac
-                    hours[h][1] += int(mem)*hourly_frac
+                #for h in range(tbeg_hour, tend_hour+1):
+                #    hours.setdefault(h, [0, 0])
+                #    hourly_frac = run_hours/(tend_hour-tbeg_hour+1)
+                #    hours[h][0] += int(slots)*hourly_frac
+                #    hours[h][1] += int(mem)*hourly_frac
+                #    if hourly_frac >1.0 :
+                #        print(jobid, tbeg, tend, slots, host)
 
+                h=int(tbeg_hour)
+                hours.setdefault(h, [0, 0])
+                hours[h][0] += int(slots)
+                hours[h][1] += int(mem)
+
+                #for s in range(tbeg, tend+1):
+                #    seconds.setdefault(s, [0, 0])
+                #    seconds[s][0] += int(slots)
+                #    seconds[s][1] += int(mem)*daily_frac
+
+                # hkey = str(host)
                 nodes.setdefault(host, [0, 0])
                 nodes[host][0] += run_hours*float(slots)
                 nodes[host][1] += run_hours*float(mem)
