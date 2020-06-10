@@ -145,8 +145,9 @@ for l in enumerate(lines):
 
                 for h in range(tbeg_hour, tend_hour+1):
                     hours.setdefault(h, [0, 0])
-                    hours[h][0] += int(slots)
-                    hours[h][1] += int(mem)
+                    hourly_frac = run_hours/(tend_hour-tbeg_hour+1)
+                    hours[h][0] += int(slots)*hourly_frac
+                    hours[h][1] += int(mem)*hourly_frac
 
                 nodes.setdefault(host, [0, 0])
                 nodes[host][0] += run_hours*float(slots)
