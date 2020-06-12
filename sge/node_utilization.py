@@ -105,7 +105,7 @@ for l in enumerate(lines):
 
         failed = line[11]
 
-        if tebeg == 0 and tend_this_year > 0:
+        if tebeg == 0 :
             print("error", jobid, queue, host, user, proj, failed)
 
         else:
@@ -154,6 +154,9 @@ for l in enumerate(lines):
             tn = tend - tend_hour
             
             for h in range(tbeg_hour, tend_hour+1):
+                #if h < -1000:
+                #   print('Oops', h, trun)
+                #   print(line)
                 hours.setdefault( h, [0, 0, 0, set()] )
 
             # Start and End in same hour
@@ -162,20 +165,24 @@ for l in enumerate(lines):
                 hours[tbeg_hour][3].add(host)
                 hours[tbeg_hour][0] = len(hours[tbeg_hour][3])
                 hours[tbeg_hour][1] += float(slots)*trun
-                hours[tbeg_hour][2] += float(mem)
+                hours[tbeg_hour][2] += float(mem)*trun
+
+            #if hours[tbeg_hour][1]> 4300 or tr > 336 :
+            #    print('oops', line)
+
             # Start and End times in different hours
             if  tr >= 1:
                 # Start hour
                 hours[tbeg_hour][3].add(host)
                 hours[tbeg_hour][0] = len(hours[tbeg_hour][3])
                 hours[tbeg_hour][1] += float(slots)*t0
-                hours[tbeg_hour][2] += float(mem)
+                hours[tbeg_hour][2] += float(mem)*t0
                 
                 # End hour
                 hours[tend_hour][3].add(host)
                 hours[tend_hour][0] = len(hours[tend_hour][3])
                 hours[tend_hour][1] += float(slots)*tn
-                hours[tend_hour][2] += float(mem)
+                hours[tend_hour][2] += float(mem)*tn
                 
                 if tr >= 2:
                     for h in range(tbeg_hour+1, tend_hour):
@@ -183,6 +190,7 @@ for l in enumerate(lines):
                         hours[h][0] = len(hours[h][3])
                         hours[h][1] += float(slots)
                         hours[h][2] += float(mem)
+               
 
             # hkey = str(host)
             #nodes.setdefault(host, [0, 0])
