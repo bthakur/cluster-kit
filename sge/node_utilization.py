@@ -110,7 +110,7 @@ for l in enumerate(lines):
 
         else:
         
-            # Get requested slots
+            # Get requested h_vmem
             match = c_pattern.search(hres)
             if match:
                 # print("matching", match.group(), match.start(), match.end())
@@ -121,6 +121,9 @@ for l in enumerate(lines):
                     mem = (float(slots)*float(match[1]))/1000.
                 else:
                     mem = 0.0
+            else:
+                # Default 10G on cluster
+                mem=10.*float(slots)
                 # print("matching", hres[match.start(): match.end()])
                     
 
@@ -156,7 +159,7 @@ for l in enumerate(lines):
             for h in range(tbeg_hour, tend_hour+1):
                 #if h < -1000:
                 #   print('Oops', h, trun)
-                #   print(line)
+                # print(jobid, host, queue, slots, mem)
                 hours.setdefault( h, [0, 0, 0, set()] )
 
             # Start and End in same hour
