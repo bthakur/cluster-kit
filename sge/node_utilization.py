@@ -95,15 +95,21 @@ for l in enumerate(lines):
         tebeg = float(line[9])/OneK
         teend = float(line[10])/OneK
 
+        # Yearly times since start of the year
+        tsub_this_year = epoch_to_year(tesub)['sec']
+        tbeg_this_year = epoch_to_year(tebeg)['sec']
+        tend_this_year = epoch_to_year(teend)['sec']
+            
         # day = tbeg_this_year['day']
         # sec = tbeg_this_year['sec']
 
         failed = line[11]
 
-        if tebeg == 0:
+        if tebeg == 0 and tend_this_year > 0:
             print("error", jobid, queue, host, user, proj, failed)
 
         else:
+        
             # Get requested slots
             match = c_pattern.search(hres)
             if match:
@@ -117,10 +123,7 @@ for l in enumerate(lines):
                     mem = 0.0
                 # print("matching", hres[match.start(): match.end()])
                     
-            # Yearly times since start of the year
-            tsub_this_year = epoch_to_year(tesub)['sec']
-            tbeg_this_year = epoch_to_year(tebeg)['sec']
-            tend_this_year = epoch_to_year(teend)['sec']
+
 
             tbeg = float( tbeg_this_year )/3600.
             tend = float( tend_this_year )/3600.
