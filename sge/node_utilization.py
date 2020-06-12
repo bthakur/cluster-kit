@@ -6,10 +6,12 @@ import argparse as ap
 import datetime as dt
 import pprint as pp
 import numpy as np
+import math
 import sys
 import re
 import traceback
 from collections import OrderedDict as od
+from collections import defaultdict
 
 
 def date_to_year(date_i):
@@ -61,8 +63,9 @@ maxHour = 0
 
 days = od()
 nodes = od()
-hours = {}
 seconds = od()
+hours = od()
+#hours = defaultdict(list)
 
 re_pattern = "h_vmem=([\d]+)(\w)"
 c_pattern = re.compile(re_pattern)
@@ -87,32 +90,47 @@ for l in enumerate(lines):
         pe = line[33]
         slots = int(line[34])
 
-        tsub = float(line[8])/OneK
-        tbeg = float(line[9])/OneK
-        tend = float(line[10])/OneK
-
-        wait_hours = round((tbeg-tsub)/3600., 2)
-        run_hours = round((tend-tbeg)/3600., 2)
-        run_secs = tend - tbeg
+        # Epoch start times to secs from millisecs
+        tesub = float(line[8])/OneK
+        tebeg = float(line[9])/OneK
+        teend = float(line[10])/OneK
 
         # day = tbeg_this_year['day']
         # sec = tbeg_this_year['sec']
 
         failed = line[11]
 
-        if tbeg == 0:
+        if tebeg == 0:
             print("error", jobid, queue, host, user, proj, failed)
 
         else:
+            # Get requested slots
+            match = c_pattern.search(hres)
+            if match:
+                # print("matching", match.group(), match.start(), match.end())
+                # print("matching", match[1], match[2])
+                if match[2].lower() == 'g':
+                    mem = float(slots)*float(match[1])
+                elif match[2].lower() == 'm':
+                    mem = (float(slots)*float(match[1]))/1000.
+                else:
+                    mem = 0.0
+                # print("matching", hres[match.start(): match.end()])
+                    
+            # Yearly times since start of the year
+            tsub_this_year = epoch_to_year(tesub)['sec']
+            tbeg_this_year = epoch_to_year(tebeg)['sec']
+            tend_this_year = epoch_to_year(teend)['sec']
 
-            tsub_this_year = epoch_to_year(tsub)['sec']
-            tbeg_this_year = epoch_to_year(tbeg)['sec']
-            tend_this_year = epoch_to_year(tend)['sec']
+            tbeg = float( tbeg_this_year )/3600.
+            tend = float( tend_this_year )/3600.
+            trun = tend - tbeg
 
-            tbeg_hour = int(tbeg_this_year/3600.)
-            tend_hour = int(tend_this_year/3600.)
-            tbeg_day = int(tbeg_this_year/(3600.*24))
-            tend_day = int(tend_this_year/(3600.*24))
+            tbeg_hour = math.floor( tbeg )
+            tend_hour = math.floor( tend )
+
+            tbeg_day = math.floor( tbeg_hour/( 24. ))
+            tend_day = math.floor( tend_hour/( 24. ))
 
             maxDay = max(tend_day, maxDay)
             minDay = min(tbeg_day, minDay)
@@ -120,32 +138,48 @@ for l in enumerate(lines):
             maxHour = max(tend_hour, maxHour)
             minHour = min(tbeg_hour, minHour)
 
-            match = c_pattern.search(hres)
-            if match:
-                # print("matching", match.group(), match.start(), match.end())
-                # print("matching", match[1], match[2])
-                if match[2].lower() == 'g':
-                    # print(match[1], 'g')
-                    mem = float(slots)*float(match[1])
-                elif match[2].lower() == 'm':
-                    # print(match[1], 'm')
-                    mem = (float(slots)*float(match[1]))/1000.
-                else:
-                    mem = 0.0
-                # print("matching", hres[match.start(): match.end()])
+            # #  Hour of the year
+            # |--0h--|--1h--|--2h--|--3h--|--4h--|..
+            #
+            # #  Job interval = tr
+            #   |<--------------------->|
+            #   | t0 |  ti  |  ti  | tn |
+            #           i1     i2
 
-            tdays = int(tend_day - tbeg_day + 1)
-            tdelta = tend - tbeg
+            tr = tend_hour - tbeg_hour
+            t0 = tbeg_hour + 1 - tbeg
+            tn = tend - tend_hour
+            
+            for h in range(tbeg_hour, tend_hour+1):
+                hours.setdefault( h, [0, 0, 0, set()] )
 
-            h=int(tbeg_hour)
-            if h in hours:
-                # hours.setdefault(h, [set(host), 0, 0])
-                hours[h][3].add(host)
-                hours[h][0] = len(hours[h][3])
-                hours[h][1] += int(slots)
-                hours[h][2] += int(mem)
-            else:
-                hours[h] = [1, int(slots), int(mem), set([host])]
+            # Start and End in same hour
+            if tr == 0:
+                hours[tbeg_hour].append
+                hours[tbeg_hour][3].add(host)
+                hours[tbeg_hour][0] = len(hours[tbeg_hour][3])
+                hours[tbeg_hour][1] += float(slots)*trun
+                hours[tbeg_hour][2] += float(mem)
+            # Start and End times in different hours
+            if  tr >= 1:
+                # Start hour
+                hours[tbeg_hour][3].add(host)
+                hours[tbeg_hour][0] = len(hours[tbeg_hour][3])
+                hours[tbeg_hour][1] += float(slots)*t0
+                hours[tbeg_hour][2] += float(mem)
+                
+                # End hour
+                hours[tend_hour][3].add(host)
+                hours[tend_hour][0] = len(hours[tend_hour][3])
+                hours[tend_hour][1] += float(slots)*tn
+                hours[tend_hour][2] += float(mem)
+                
+                if tr >= 2:
+                    for h in range(tbeg_hour+1, tend_hour):
+                        hours[h][3].add(host)
+                        hours[h][0] = len(hours[h][3])
+                        hours[h][1] += float(slots)
+                        hours[h][2] += float(mem)
 
             # hkey = str(host)
             #nodes.setdefault(host, [0, 0])
@@ -160,7 +194,7 @@ print('Min Max Day ', minDay, maxDay)
 #pp.pprint(hours)
 
 for k,v in hours.items():
-    print(k,v[0], v[1], v[2])
+    print(k, v[0], round(v[1],2), round(v[2],2) )
 
 # print(slots_by_hours)
 # for i,v in np.ndenumerate(hours.nonzero()):
