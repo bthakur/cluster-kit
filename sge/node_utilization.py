@@ -121,6 +121,10 @@ for l in enumerate(lines):
                     mem = (float(slots)*float(match[1]))/1000.
                 else:
                     mem = 0.0
+                # Bug 49155457 h_vmem=1000Gx28
+                if queue == 'gpu.q' and slots == 28:
+                    mem = 250
+                    
             else:
                 # Default 10G on cluster
                 mem=10.*float(slots)
@@ -157,9 +161,9 @@ for l in enumerate(lines):
             tn = tend - tend_hour
             
             for h in range(tbeg_hour, tend_hour+1):
-                #if h < -1000:
+                if mem >= 4200:
                 #   print('Oops', h, trun)
-                # print(jobid, host, queue, slots, mem)
+                    print('MemisMoore', jobid, host, queue, slots, mem)
                 hours.setdefault( h, [0, 0, 0, set()] )
 
             # Start and End in same hour
