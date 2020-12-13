@@ -5,7 +5,7 @@
 import argparse as ap
 import datetime as dt
 import pprint as pp
-import numpy as np
+#import numpy as np
 import math
 import sys
 import re
@@ -109,32 +109,43 @@ for l in enumerate(lines):
             print("error", jobid, queue, host, user, proj, failed)
 
         else:
-        
+            #print(line, hres)
             # Get requested h_vmem
             match = c_pattern.search(hres)
-            if match:
-                # print("matching", match.group(), match.start(), match.end())
-                # print("matching", match[1], match[2])
-                if match[2].lower() == 'g':
-                    mem = float(slots)*float(match[1])
-                elif match[2].lower() == 'm':
-                    mem = (float(slots)*float(match[1]))/1000.
+            #print line[39]
+            #print match.group(0),match.group(1),match.group(2)
+            try:
+              if match:
+                #print("matching", match.group(), match.start(), match.end())
+                #print jobid
+                #print("matching",match.group(1),match.group(2))
+                imem=int(match.group(1))
+                umem=str(match.group(2)).lower()
+                if umem == 'g':
+                    mem = float(slots)*float(imem)
+                elif umem == 'm':
+                    mem = (float(slots)*float(imem))/1000.
                 else:
-                    mem = 0.0
+                    mem = 0.2
                 # Bug 49155457 h_vmem=1000Gx28
-                if queue == 'gpu.q' and slots == 28:
-                    mem = 250
-                    
-            else:
+                if queue == 'gpu.q' and slots >= 10 and imem > 100 :
+                    mem = 250.
+                    print('GPUBugFix', jobid, host, queue, slots, imem, umem, mem)
+              else:
                 # Default 10G on cluster
                 mem=10.*float(slots)
                 # print("matching", hres[match.start(): match.end()])
-                    
+            except (RuntimeError, TypeError, NameError):
+                raise
+
+
 
 
             tbeg = float( tbeg_this_year )/3600.
             tend = float( tend_this_year )/3600.
             trun = tend - tbeg
+
+            # Returns integer vs float in Python2 vs Python3
 
             tbeg_hour = math.floor( tbeg )
             tend_hour = math.floor( tend )
@@ -161,9 +172,9 @@ for l in enumerate(lines):
             tn = tend - tend_hour
             
             for h in range(tbeg_hour, tend_hour+1):
-                if mem >= 4200:
+                #if mem >= 4200:
                 #   print('Oops', h, trun)
-                    print('MemisMoore', jobid, host, queue, slots, mem)
+                #    print('MemisMoore', jobid, host, queue, slots, mem)
                 hours.setdefault( h, [0, 0, 0, set()] )
 
             # Start and End in same hour
